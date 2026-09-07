@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">اللوحة الإدارية - حراء للسياحة</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <!-- ============================================================ -->
+    <!-- الملفات المشتركة: نفس الباك إند (supabase.js) + التصميم الموحّد -->
+    <!-- ============================================================ -->
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        /* تخصيصات بسيطة خاصة بهذه الصفحة فقط */
+        .branch-form-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .branch-form-row .form-field { flex: 1; margin-bottom: 0; }
+        .branch-form-row label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .branch-form-row input {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .branch-form-row input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        .inline-edit-input {
+            width: 100%; padding: 4px 8px; border: 1px solid var(--accent); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text);
+        }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>حراء للسياحة</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html" class="active"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="#" onclick="notifySoon('السيارات'); return false;"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('التطوير والأفكار'); return false;"><i class="bi bi-lightbulb-fill"></i> التطوير والأفكار <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('العقود'); return false;"><i class="bi bi-file-earmark-text-fill"></i> العقود <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    اللوحة الإدارية
+                    <small>تنسيق الأعمال الداخلية</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">حراء للسياحة</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <!-- ===== PAGE HEADER ===== -->
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2 id="welcomeTitle">مرحباً بك 👋</h2>
+                    <p>نظرة عامة على اللوحة الإدارية — الخطوة 1: الأساس المشترك</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <!-- ===== STATS ===== -->
+            <div class="stats-grid">
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-signpost-split-fill"></i></span>
+                    <div class="stat-number" id="statBranches">0</div>
+                    <div class="stat-label">الفروع المسجلة</div>
+                </div>
+                <div class="stat-card stat-blue">
+                    <span class="stat-icon"><i class="bi bi-bell-fill"></i></span>
+                    <div class="stat-number" id="statNotifs">0</div>
+                    <div class="stat-label">إشعارات غير مقروءة</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-kanban-fill"></i></span>
+                    <div class="stat-number" id="statTasks">0</div>
+                    <div class="stat-label">مهام قيد التنفيذ</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-car-front-fill"></i></span>
+                    <div class="stat-number">—</div>
+                    <div class="stat-label">السيارات (قريبًا)</div>
+                </div>
+            </div>
+
+            <!-- ===== MODULE CARDS ===== -->
+            <div class="quick-actions-grid">
+                <a href="tasks.html" class="quick-action">
+                    <i class="bi bi-kanban-fill"></i>
+                    <div><strong>تنسيق الأعمال</strong><span>المهام والتنبيهات</span></div>
+                </a>
+                <a href="#" class="quick-action" onclick="notifySoon('السيارات'); return false;">
+                    <span class="soon-tag">قريبًا</span>
+                    <i class="bi bi-car-front-fill"></i>
+                    <div><strong>السيارات</strong><span>الأسطول وحالته</span></div>
+                </a>
+                <a href="#" class="quick-action" onclick="notifySoon('المشتريات'); return false;">
+                    <span class="soon-tag">قريبًا</span>
+                    <i class="bi bi-cart-fill"></i>
+                    <div><strong>المشتريات</strong><span>الموردين وعروض الأسعار</span></div>
+                </a>
+                <a href="#" class="quick-action" onclick="notifySoon('التطوير والأفكار'); return false;">
+                    <span class="soon-tag">قريبًا</span>
+                    <i class="bi bi-lightbulb-fill"></i>
+                    <div><strong>التطوير والأفكار</strong><span>مقترحات التحسين</span></div>
+                </a>
+            </div>
+
+            <!-- ===== ERROR BANNER ===== -->
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل بعض البيانات.</span>
+                <button onclick="loadDashboard()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إدارة الفروع (أول ميزة فعلية في الخطوة 1) ===== -->
+            <div class="panel" id="branches-panel">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</h5>
+                    <span class="record-count" id="branchesCount">0 فرع</span>
+                </div>
+                <div style="padding: 16px;">
+                    <p style="font-size:12px;color:var(--text-tertiary); margin-bottom:14px;">
+                        الفروع المسجّلة هنا هتُستخدم لاحقًا في كل الموديولات القادمة (السيارات، المشتريات، العقود...) بدل كتابة اسم الفرع يدويًا في كل مرة.
+                    </p>
+                    <div class="branch-form-row">
+                        <div class="form-field">
+                            <label for="newBranchName">اسم فرع جديد</label>
+                            <input type="text" id="newBranchName" placeholder="مثال: الفرع الساحلي" />
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addBranch()">
+                            <i class="bi bi-plus-lg"></i> إضافة الفرع
+                        </button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="table-custom">
+                            <thead>
+                                <tr><th>#</th><th>اسم الفرع</th><th>الحالة</th><th>تاريخ الإضافة</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody id="branchesTableBody">
+                                <tr class="empty-state-row"><td colspan="5"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">حراء للسياحة — تنسيق الأعمال الداخلية</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">الخطوة 1 من 8</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================================================================ -->
+    <!-- الملف المشترك للسلوكيات (سايدبار / وضع ليلي / توست / خروج) -->
+    <!-- ================================================================ -->
+    <script src="layout.js"></script>
+
+    <!-- ================================================================ -->
+    <!-- منطق هذه الصفحة: تحميل الإحصائيات + إدارة الفروع (CRUD) -->
+    <!-- ================================================================ -->
+    <script>
+        var branchesCache = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadDashboard });
+            if (!currentUser) return;
+            loadDashboard();
+        });
+
+        async function loadDashboard() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await Promise.all([loadBranches(), loadNotificationsCount(), loadTasksCount()]);
+            } catch (error) {
+                console.error('خطأ في تحميل بيانات اللوحة:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        // ================================================================
+        // الفروع
+        // ================================================================
+        async function loadBranches() {
+            var tbody = document.getElementById('branchesTableBody');
+            try {
+                var branches = await Supabase.fetchData('admin_branches', { order: 'created_at' });
+                branchesCache = branches || [];
+
+                document.getElementById('statBranches').textContent = branchesCache.length;
+                document.getElementById('branchesCount').textContent = branchesCache.length + ' فرع';
+
+                if (!branchesCache.length) {
+                    tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><i class="bi bi-inbox"></i>لا توجد فروع مسجّلة بعد — أضف أول فرع من الأعلى</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = branchesCache.map(function(b, index) {
+                    var dateStr = b.created_at ? new Date(b.created_at).toLocaleDateString('ar-EG') : '—';
+                    var statusBadge = b.is_active === false
+                        ? '<span class="status-badge status-cancelled">غير مفعّل</span>'
+                        : '<span class="status-badge status-active">مفعّل</span>';
+                    return (
+                        '<tr data-id="' + b.id + '">' +
+                            '<td>' + (index + 1) + '</td>' +
+                            '<td class="branch-name-cell">' + escapeHtml(b.name) + '</td>' +
+                            '<td>' + statusBadge + '</td>' +
+                            '<td>' + dateStr + '</td>' +
+                            '<td>' +
+                                '<button class="btn-icon btn-icon-edit" title="تعديل الاسم" onclick="editBranch(\'' + b.id + '\')"><i class="bi bi-pencil-fill"></i></button> ' +
+                                '<button class="btn-icon" title="' + (b.is_active === false ? 'تفعيل' : 'تعطيل') + '" onclick="toggleBranchActive(\'' + b.id + '\', ' + (b.is_active === false) + ')"><i class="bi ' + (b.is_active === false ? 'bi-toggle-off' : 'bi-toggle-on') + '"></i></button> ' +
+                                '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteBranch(\'' + b.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                            '</td>' +
+                        '</tr>'
+                    );
+                }).join('');
+            } catch (error) {
+                console.error('خطأ في تحميل الفروع:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="5"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل الفروع. تأكد من تشغيل ملف admin_schema_step1.sql في Supabase.</td></tr>';
+                throw error;
+            }
+        }
+
+        async function addBranch() {
+            var input = document.getElementById('newBranchName');
+            var name = input.value.trim();
+            if (!name) {
+                showToast('اكتب اسم الفرع أولاً', 'warning');
+                return;
+            }
+            try {
+                await Supabase.addData('admin_branches', { name: name, is_active: true });
+                input.value = '';
+                showToast('تمت إضافة الفرع بنجاح', 'success');
+                await loadBranches();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة الفرع', 'error');
+            }
+        }
+
+        function editBranch(id) {
+            var branch = branchesCache.find(function(b) { return b.id === id; });
+            if (!branch) return;
+            var row = document.querySelector('tr[data-id="' + id + '"] .branch-name-cell');
+            if (!row) return;
+            var oldName = branch.name;
+            row.innerHTML = '<input type="text" class="inline-edit-input" id="editInput_' + id + '" value="' + escapeHtml(oldName) + '" />';
+            var input = document.getElementById('editInput_' + id);
+            input.focus();
+            input.select();
+
+            function save() {
+                var newName = input.value.trim();
+                if (newName && newName !== oldName) {
+                    saveBranchName(id, newName);
+                } else {
+                    loadBranches();
+                }
+            }
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') save();
+                if (e.key === 'Escape') loadBranches();
+            });
+            input.addEventListener('blur', save);
+        }
+
+        async function saveBranchName(id, newName) {
+            try {
+                await Supabase.updateData('admin_branches', id, { name: newName });
+                showToast('تم تعديل اسم الفرع', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تعديل اسم الفرع', 'error');
+            }
+            await loadBranches();
+        }
+
+        async function toggleBranchActive(id, makeActive) {
+            try {
+                await Supabase.updateData('admin_branches', id, { is_active: makeActive });
+                showToast(makeActive ? 'تم تفعيل الفرع' : 'تم تعطيل الفرع', 'success');
+                await loadBranches();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة الفرع', 'error');
+            }
+        }
+
+        async function deleteBranch(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا الفرع؟')) return;
+            try {
+                await Supabase.deleteData('admin_branches', id);
+                showToast('تم حذف الفرع', 'success');
+                await loadBranches();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف الفرع', 'error');
+            }
+        }
+
+        // ================================================================
+        // عدّاد الإشعارات غير المقروءة (الجدول جاهز من الخطوة 1،
+        // والموديولات القادمة هي اللي هتضيف له بيانات فعلية)
+        // ================================================================
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('statNotifs').textContent = count;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+                document.getElementById('statNotifs').textContent = '0';
+            }
+        }
+
+        document.getElementById('notifBtn') && document.getElementById('notifBtn').addEventListener('click', function() {
+            showToast('نظام الإشعارات المركزي جاهز — الموديولات القادمة هتبدأ تضيف له إشعارات فعلية', 'info');
+        });
+
+        async function loadTasksCount() {
+            try {
+                var pending = await Supabase.fetchData('admin_tasks', { filter: { status: 'pending' } });
+                document.getElementById('statTasks').textContent = (pending || []).length;
+            } catch (error) {
+                console.error('خطأ في تحميل عدد المهام:', error);
+                document.getElementById('statTasks').textContent = '0';
+            }
+        }
+
+        function notifySoon(moduleName) {
+            showToast('📦 موديول "' + moduleName + '" هيتم بناؤه في إحدى الخطوات القادمة', 'info');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

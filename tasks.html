@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">تنسيق الأعمال - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count {
+            background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--radius-full);
+        }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+        .tab-btn.tab-critical.active { background: var(--danger); border-color: var(--danger); }
+        .tab-btn.tab-important.active { background: var(--warning); border-color: var(--warning); }
+        .tab-btn.tab-deferrable.active { background: var(--info); border-color: var(--info); }
+
+        .task-form-grid { display: grid; grid-template-columns: 2fr 1.4fr 1.2fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .task-form-grid .form-field { margin-bottom: 0; }
+        .task-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .task-form-grid input, .task-form-grid select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .task-form-grid input:focus, .task-form-grid select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 768px) { .task-form-grid { grid-template-columns: 1fr; } }
+
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+        .overdue-tag { font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-full); margin-right: 6px; }
+        .overdue-tag.warn { background: var(--warning-bg); color: var(--warning); }
+        .overdue-tag.danger { background: var(--danger-bg); color: var(--danger); }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>حراء للسياحة</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html" class="active"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="#" onclick="notifySoon('السيارات'); return false;"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('التطوير والأفكار'); return false;"><i class="bi bi-lightbulb-fill"></i> التطوير والأفكار <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('العقود'); return false;"><i class="bi bi-file-earmark-text-fill"></i> العقود <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    تنسيق الأعمال
+                    <small>المهام والتنبيهات</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">حراء للسياحة</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2>تنسيق الأعمال (المهام)</h2>
+                    <p>3 قوائم حسب الأولوية + تنبيهات تلقائية للمهام المتأخرة</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card stat-red">
+                    <span class="stat-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+                    <div class="stat-number" id="statCritical">0</div>
+                    <div class="stat-label">مهام مهمة جدًا (قيد التنفيذ)</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-star-fill"></i></span>
+                    <div class="stat-number" id="statImportant">0</div>
+                    <div class="stat-label">مهام مهمة (قيد التنفيذ)</div>
+                </div>
+                <div class="stat-card stat-blue">
+                    <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <div class="stat-number" id="statDeferrable">0</div>
+                    <div class="stat-label">ممكن تتأجل (قيد التنفيذ)</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-alarm-fill"></i></span>
+                    <div class="stat-number" id="statOverdue">0</div>
+                    <div class="stat-label">متأخرة / غير منجزة</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل المهام. تأكد من تشغيل ملف admin_schema_step2.sql في Supabase.</span>
+                <button onclick="loadTasksPage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إضافة مهمة جديدة ===== -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة مهمة جديدة</h5>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="task-form-grid">
+                        <div class="form-field">
+                            <label for="newTaskTitle">اسم المهمة</label>
+                            <input type="text" id="newTaskTitle" placeholder="مثال: متابعة عقد مورد الأحبار" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newTaskCoordinated">الجهة المنسّقة لها</label>
+                            <input type="text" id="newTaskCoordinated" placeholder="مثال: قسم المشتريات" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newTaskPriority">الأولوية</label>
+                            <select id="newTaskPriority">
+                                <option value="critical">مهمة جدًا</option>
+                                <option value="important" selected>مهمة فقط</option>
+                                <option value="deferrable">ممكن تتأجل</option>
+                            </select>
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addTask()">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== التبويبات الثلاثة ===== -->
+            <div class="tabs-bar">
+                <button class="tab-btn tab-critical active" data-priority="critical" onclick="switchTab('critical')">
+                    <i class="bi bi-exclamation-octagon-fill"></i> مهام مهمة جدًا <span class="tab-count" id="tabCountCritical">0</span>
+                </button>
+                <button class="tab-btn tab-important" data-priority="important" onclick="switchTab('important')">
+                    <i class="bi bi-star-fill"></i> مهام مهمة فقط <span class="tab-count" id="tabCountImportant">0</span>
+                </button>
+                <button class="tab-btn tab-deferrable" data-priority="deferrable" onclick="switchTab('deferrable')">
+                    <i class="bi bi-hourglass-split"></i> مهام ممكن تتأجل <span class="tab-count" id="tabCountDeferrable">0</span>
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title" id="activeTabTitle"><i class="bi bi-exclamation-octagon-fill"></i> مهام مهمة جدًا</h5>
+                    <span class="record-count" id="tasksCount">0 مهمة</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead>
+                            <tr><th>#</th><th>اسم المهمة</th><th>الجهة المنسّقة لها</th><th>الحالة</th><th>تاريخ الإضافة</th><th>إجراءات</th></tr>
+                        </thead>
+                        <tbody id="tasksTableBody">
+                            <tr class="empty-state-row"><td colspan="6"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">حراء للسياحة — تنسيق الأعمال الداخلية</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">الخطوة 2 من 8</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var tasksCache = [];
+        var currentTab = 'critical';
+
+        // حدود الإشعار بالأيام (قابلة للتعديل من هنا فقط)
+        var NOTIFY_UNFINISHED_AFTER_DAYS = 2;   // بعدها: "غير منجزة"
+        var NOTIFY_OVERDUE_AFTER_DAYS = 7;      // بعدها: "متأخرة"
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadTasksPage });
+            if (!currentUser) return;
+            loadTasksPage();
+        });
+
+        async function loadTasksPage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadTasks();
+                await checkTaskNotifications();
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة المهام:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        async function loadTasks() {
+            var tbody = document.getElementById('tasksTableBody');
+            try {
+                tasksCache = await Supabase.fetchData('admin_tasks', { order: 'created_at' }) || [];
+                updateStatsAndTabs();
+                renderTasksTable();
+            } catch (error) {
+                console.error('خطأ في تحميل المهام:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل المهام. تأكد من تشغيل admin_schema_step2.sql</td></tr>';
+                throw error;
+            }
+        }
+
+        function daysSince(dateStr) {
+            var created = new Date(dateStr).getTime();
+            var now = Date.now();
+            return Math.floor((now - created) / (1000 * 60 * 60 * 24));
+        }
+
+        function getOverdueTag(task) {
+            if (task.status !== 'pending') return '';
+            var d = daysSince(task.created_at);
+            if (d >= NOTIFY_OVERDUE_AFTER_DAYS) return '<span class="overdue-tag danger">متأخرة</span>';
+            if (d >= NOTIFY_UNFINISHED_AFTER_DAYS) return '<span class="overdue-tag warn">غير منجزة</span>';
+            return '';
+        }
+
+        function updateStatsAndTabs() {
+            var critical = tasksCache.filter(function(t){ return t.priority === 'critical' && t.status === 'pending'; });
+            var important = tasksCache.filter(function(t){ return t.priority === 'important' && t.status === 'pending'; });
+            var deferrable = tasksCache.filter(function(t){ return t.priority === 'deferrable' && t.status === 'pending'; });
+            var overdue = tasksCache.filter(function(t){ return t.status === 'pending' && daysSince(t.created_at) >= NOTIFY_UNFINISHED_AFTER_DAYS; });
+
+            document.getElementById('statCritical').textContent = critical.length;
+            document.getElementById('statImportant').textContent = important.length;
+            document.getElementById('statDeferrable').textContent = deferrable.length;
+            document.getElementById('statOverdue').textContent = overdue.length;
+
+            document.getElementById('tabCountCritical').textContent = tasksCache.filter(function(t){ return t.priority === 'critical'; }).length;
+            document.getElementById('tabCountImportant').textContent = tasksCache.filter(function(t){ return t.priority === 'important'; }).length;
+            document.getElementById('tabCountDeferrable').textContent = tasksCache.filter(function(t){ return t.priority === 'deferrable'; }).length;
+        }
+
+        function switchTab(priority) {
+            currentTab = priority;
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-priority') === priority);
+            });
+            var titles = {
+                critical: '<i class="bi bi-exclamation-octagon-fill"></i> مهام مهمة جدًا',
+                important: '<i class="bi bi-star-fill"></i> مهام مهمة فقط',
+                deferrable: '<i class="bi bi-hourglass-split"></i> مهام ممكن تتأجل'
+            };
+            document.getElementById('activeTabTitle').innerHTML = titles[priority];
+            renderTasksTable();
+        }
+
+        function statusLabel(status) {
+            var map = {
+                pending: '<span class="status-badge status-pending">قيد التنفيذ</span>',
+                deferred: '<span class="status-badge status-info">أُجّلت</span>',
+                done: '<span class="status-badge status-completed">نُفّذت</span>',
+                transferred: '<span class="status-badge status-cancelled">رُحّلت</span>'
+            };
+            return map[status] || status;
+        }
+
+        function renderTasksTable() {
+            var tbody = document.getElementById('tasksTableBody');
+            var filtered = tasksCache.filter(function(t) { return t.priority === currentTab; });
+            document.getElementById('tasksCount').textContent = filtered.length + ' مهمة';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>لا توجد مهام في هذه القائمة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(t, index) {
+                var dateStr = t.created_at ? new Date(t.created_at).toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(t.title) + getOverdueTag(t) + '</td>' +
+                        '<td>' + escapeHtml(t.coordinated_with || '—') + '</td>' +
+                        '<td>' +
+                            '<select class="status-select" onchange="changeTaskStatus(\'' + t.id + '\', this.value)">' +
+                                '<option value="pending"' + (t.status === 'pending' ? ' selected' : '') + '>قيد التنفيذ</option>' +
+                                '<option value="deferred"' + (t.status === 'deferred' ? ' selected' : '') + '>أُجّلت</option>' +
+                                '<option value="done"' + (t.status === 'done' ? ' selected' : '') + '>نُفّذت</option>' +
+                                '<option value="transferred"' + (t.status === 'transferred' ? ' selected' : '') + '>رُحّلت</option>' +
+                            '</select>' +
+                        '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteTask(\'' + t.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addTask() {
+            var title = document.getElementById('newTaskTitle').value.trim();
+            var coordinated = document.getElementById('newTaskCoordinated').value.trim();
+            var priority = document.getElementById('newTaskPriority').value;
+
+            if (!title) {
+                showToast('اكتب اسم المهمة أولاً', 'warning');
+                return;
+            }
+            try {
+                await Supabase.addData('admin_tasks', {
+                    title: title,
+                    coordinated_with: coordinated || null,
+                    priority: priority,
+                    status: 'pending'
+                });
+                document.getElementById('newTaskTitle').value = '';
+                document.getElementById('newTaskCoordinated').value = '';
+                switchTab(priority);
+                showToast('تمت إضافة المهمة بنجاح', 'success');
+                await loadTasks();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة المهمة', 'error');
+            }
+        }
+
+        async function changeTaskStatus(id, newStatus) {
+            try {
+                await Supabase.updateData('admin_tasks', id, { status: newStatus, updated_at: new Date().toISOString() });
+                showToast('تم تحديث حالة المهمة', 'success');
+                await loadTasks();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة المهمة', 'error');
+            }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه المهمة؟')) return;
+            try {
+                await Supabase.deleteData('admin_tasks', id);
+                showToast('تم حذف المهمة', 'success');
+                await loadTasks();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف المهمة', 'error');
+            }
+        }
+
+        // ================================================================
+        // فحص المهام المتأخرة/غير المنجزة وتسجيل إشعار مرة واحدة فقط لكل حالة
+        // (بيتفحص الإشعارات الموجودة فعلاً قبل ما يضيف واحد جديد لنفس المهمة)
+        // ================================================================
+        async function checkTaskNotifications() {
+            try {
+                var existingNotifs = await Supabase.fetchData('admin_notifications', { filter: { module: 'tasks' } });
+                var existingRefIds = (existingNotifs || []).map(function(n) { return n.ref_id + '|' + n.level; });
+
+                var pending = tasksCache.filter(function(t) { return t.status === 'pending'; });
+
+                for (var i = 0; i < pending.length; i++) {
+                    var t = pending[i];
+                    var d = daysSince(t.created_at);
+
+                    if (d >= NOTIFY_OVERDUE_AFTER_DAYS && existingRefIds.indexOf(t.id + '|danger') === -1) {
+                        await Supabase.addData('admin_notifications', {
+                            module: 'tasks',
+                            title: 'مهمة متأخرة: ' + t.title,
+                            message: 'مرّ عليها ' + d + ' يوم بدون تنفيذ',
+                            level: 'danger',
+                            ref_table: 'admin_tasks',
+                            ref_id: t.id
+                        });
+                    } else if (d >= NOTIFY_UNFINISHED_AFTER_DAYS && existingRefIds.indexOf(t.id + '|warning') === -1) {
+                        await Supabase.addData('admin_notifications', {
+                            module: 'tasks',
+                            title: 'مهمة غير منجزة: ' + t.title,
+                            message: 'مرّ عليها ' + d + ' يوم بدون تنفيذ',
+                            level: 'warning',
+                            ref_table: 'admin_tasks',
+                            ref_id: t.id
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('خطأ في فحص إشعارات المهام:', error);
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function notifySoon(moduleName) {
+            showToast('📦 موديول "' + moduleName + '" هيتم بناؤه في إحدى الخطوات القادمة', 'info');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
