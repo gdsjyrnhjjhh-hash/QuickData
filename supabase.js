@@ -6,8 +6,8 @@
 // 1. الإعدادات الأساسية
 // ================================================================
 var SUPABASE_CONFIG = {
-    URL: 'https://brorzaovgdleimkpddge.supabase.co',
-    KEY: 'sb_publishable_vI-TlaFqvgyi_pryplScAg_L_nqubuQ'
+    URL: 'https://hecsuitrqtbzgbbjjtbf.supabase.co',
+    KEY: 'sb_publishable_BclLz9-zv8MU4xiY76VonQ_c7Cy5DPd'
 };
 
 // ================================================================
