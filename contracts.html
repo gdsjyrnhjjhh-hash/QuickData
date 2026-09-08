@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">العقود - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count {
+            background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--radius-full);
+        }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+        .tab-btn.tab-active_c.active { background: var(--success); border-color: var(--success); }
+        .tab-btn.tab-expiring.active { background: var(--warning); border-color: var(--warning); }
+        .tab-btn.tab-expired.active { background: var(--danger); border-color: var(--danger); }
+
+        .contract-form-grid { display: grid; grid-template-columns: 1.6fr 1.6fr 1.2fr 1fr 1fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .contract-form-grid .form-field { margin-bottom: 0; }
+        .contract-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .contract-form-grid input, .contract-form-grid select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .contract-form-grid input:focus, .contract-form-grid select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 900px) { .contract-form-grid { grid-template-columns: 1fr 1fr; } }
+
+        .expiry-tag { font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-full); margin-right: 6px; }
+        .expiry-tag.warn { background: var(--warning-bg); color: var(--warning); }
+        .expiry-tag.danger { background: var(--danger-bg); color: var(--danger); }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>حراء للسياحة</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="#" onclick="notifySoon('السيارات'); return false;"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="contracts.html" class="active"><i class="bi bi-file-earmark-text-fill"></i> العقود <span class="sidebar-badge">جديد</span></a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    العقود
+                    <small>عقود الشركة وتواريخ الانتهاء</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">حراء للسياحة</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2>العقود</h2>
+                    <p>تسجيل عقود الشركة ومتابعة تواريخ انتهائها تلقائيًا</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-file-earmark-text-fill"></i></span>
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">إجمالي العقود</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <span class="stat-icon"><i class="bi bi-check-circle-fill"></i></span>
+                    <div class="stat-number" id="statActive">0</div>
+                    <div class="stat-label">سارية</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <div class="stat-number" id="statExpiring">0</div>
+                    <div class="stat-label">قاربت على الانتهاء (30 يوم)</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+                    <div class="stat-number" id="statExpired">0</div>
+                    <div class="stat-label">منتهية</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل العقود. تأكد من تشغيل ملف admin_schema_step4.sql في Supabase.</span>
+                <button onclick="loadContractsPage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إضافة عقد جديد ===== -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة عقد جديد</h5>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="contract-form-grid">
+                        <div class="form-field">
+                            <label for="newContractType">نوع العقد</label>
+                            <input type="text" id="newContractType" placeholder="مثال: عقد إيجار مكتب" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newContractOwner">الطرف الآخر</label>
+                            <input type="text" id="newContractOwner" placeholder="مثال: شركة العقارات المتحدة" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newContractBranch">الفرع</label>
+                            <select id="newContractBranch">
+                                <option value="">— بدون فرع —</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="newContractDate">تاريخ العقد</label>
+                            <input type="date" id="newContractDate" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newContractExpiry">تاريخ الانتهاء</label>
+                            <input type="date" id="newContractExpiry" />
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addContract()">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== التبويبات ===== -->
+            <div class="tabs-bar">
+                <button class="tab-btn active" data-status="all" onclick="switchTab('all')">
+                    <i class="bi bi-file-earmark-text-fill"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
+                </button>
+                <button class="tab-btn tab-active_c" data-status="active_c" onclick="switchTab('active_c')">
+                    <i class="bi bi-check-circle-fill"></i> سارية <span class="tab-count" id="tabCountActive">0</span>
+                </button>
+                <button class="tab-btn tab-expiring" data-status="expiring" onclick="switchTab('expiring')">
+                    <i class="bi bi-hourglass-split"></i> قاربت على الانتهاء <span class="tab-count" id="tabCountExpiring">0</span>
+                </button>
+                <button class="tab-btn tab-expired" data-status="expired" onclick="switchTab('expired')">
+                    <i class="bi bi-exclamation-octagon-fill"></i> منتهية <span class="tab-count" id="tabCountExpired">0</span>
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title" id="activeTabTitle"><i class="bi bi-file-earmark-text-fill"></i> كل العقود</h5>
+                    <span class="record-count" id="contractsCount">0 عقد</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead>
+                            <tr><th>#</th><th>نوع العقد</th><th>الطرف الآخر</th><th>الفرع</th><th>تاريخ العقد</th><th>تاريخ الانتهاء</th><th>الحالة</th><th>إجراءات</th></tr>
+                        </thead>
+                        <tbody id="contractsTableBody">
+                            <tr class="empty-state-row"><td colspan="8"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">حراء للسياحة — العقود</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">موديول العقود</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var contractsCache = [];
+        var branchesCache = [];
+        var currentTab = 'all';
+
+        // حد التنبيه بالأيام قبل انتهاء العقد (قابل للتعديل من هنا فقط)
+        var NOTIFY_EXPIRING_WITHIN_DAYS = 30;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadContractsPage });
+            if (!currentUser) return;
+            var todayInput = document.getElementById('newContractDate');
+            if (todayInput) todayInput.value = new Date().toISOString().slice(0, 10);
+            loadContractsPage();
+        });
+
+        async function loadContractsPage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadBranchesForSelect();
+                await loadContracts();
+                await checkContractNotifications();
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة العقود:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        async function loadBranchesForSelect() {
+            try {
+                branchesCache = await Supabase.fetchData('admin_branches', { order: 'name' }) || [];
+                var select = document.getElementById('newContractBranch');
+                var sorted = branchesCache.slice().sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ar'); });
+                select.innerHTML = '<option value="">— بدون فرع —</option>' + sorted.map(function(b) {
+                    return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>';
+                }).join('');
+            } catch (error) {
+                console.error('خطأ في تحميل الفروع:', error);
+            }
+        }
+
+        function branchName(id) {
+            if (!id) return '—';
+            var b = branchesCache.find(function(x) { return x.id === id; });
+            return b ? escapeHtml(b.name) : '—';
+        }
+
+        async function loadContracts() {
+            var tbody = document.getElementById('contractsTableBody');
+            try {
+                contractsCache = await Supabase.fetchData('admin_contracts', { order: 'created_at' }) || [];
+                updateStatsAndTabs();
+                renderContractsTable();
+            } catch (error) {
+                console.error('خطأ في تحميل العقود:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="8"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل العقود. تأكد من تشغيل admin_schema_step4.sql</td></tr>';
+                throw error;
+            }
+        }
+
+        function daysUntil(dateStr) {
+            if (!dateStr) return null;
+            var target = new Date(dateStr + 'T00:00:00').getTime();
+            var now = new Date();
+            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            return Math.floor((target - today) / (1000 * 60 * 60 * 24));
+        }
+
+        function contractStatus(c) {
+            var d = daysUntil(c.expiry_date);
+            if (d === null) return 'active_c';
+            if (d < 0) return 'expired';
+            if (d <= NOTIFY_EXPIRING_WITHIN_DAYS) return 'expiring';
+            return 'active_c';
+        }
+
+        function statusBadge(c) {
+            var status = contractStatus(c);
+            if (status === 'expired') return '<span class="status-badge status-cancelled">منتهي</span>';
+            if (status === 'expiring') return '<span class="status-badge status-pending">قارب على الانتهاء</span>';
+            return '<span class="status-badge status-active">سارٍ</span>';
+        }
+
+        function updateStatsAndTabs() {
+            var byStatus = function(s) { return contractsCache.filter(function(c) { return contractStatus(c) === s; }); };
+
+            document.getElementById('statTotal').textContent = contractsCache.length;
+            document.getElementById('statActive').textContent = byStatus('active_c').length;
+            document.getElementById('statExpiring').textContent = byStatus('expiring').length;
+            document.getElementById('statExpired').textContent = byStatus('expired').length;
+
+            document.getElementById('tabCountAll').textContent = contractsCache.length;
+            document.getElementById('tabCountActive').textContent = byStatus('active_c').length;
+            document.getElementById('tabCountExpiring').textContent = byStatus('expiring').length;
+            document.getElementById('tabCountExpired').textContent = byStatus('expired').length;
+        }
+
+        function switchTab(status) {
+            currentTab = status;
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-status') === status);
+            });
+            var titles = {
+                all: '<i class="bi bi-file-earmark-text-fill"></i> كل العقود',
+                active_c: '<i class="bi bi-check-circle-fill"></i> عقود سارية',
+                expiring: '<i class="bi bi-hourglass-split"></i> قاربت على الانتهاء',
+                expired: '<i class="bi bi-exclamation-octagon-fill"></i> عقود منتهية'
+            };
+            document.getElementById('activeTabTitle').innerHTML = titles[status];
+            renderContractsTable();
+        }
+
+        function renderContractsTable() {
+            var tbody = document.getElementById('contractsTableBody');
+            var filtered = currentTab === 'all' ? contractsCache : contractsCache.filter(function(c) { return contractStatus(c) === currentTab; });
+            document.getElementById('contractsCount').textContent = filtered.length + ' عقد';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="8"><i class="bi bi-inbox"></i>لا توجد عقود في هذه القائمة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(c, index) {
+                var contractDateStr = c.contract_date ? new Date(c.contract_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                var expiryDateStr = c.expiry_date ? new Date(c.expiry_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(c.contract_type) + '</td>' +
+                        '<td>' + escapeHtml(c.owner_name) + '</td>' +
+                        '<td>' + branchName(c.branch_id) + '</td>' +
+                        '<td>' + contractDateStr + '</td>' +
+                        '<td>' + expiryDateStr + '</td>' +
+                        '<td>' + statusBadge(c) + '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteContract(\'' + c.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addContract() {
+            var contractType = document.getElementById('newContractType').value.trim();
+            var ownerName = document.getElementById('newContractOwner').value.trim();
+            var branchId = document.getElementById('newContractBranch').value || null;
+            var contractDate = document.getElementById('newContractDate').value || null;
+            var expiryDate = document.getElementById('newContractExpiry').value || null;
+
+            if (!contractType || !ownerName) {
+                showToast('اكتب نوع العقد واسم الطرف الآخر أولاً', 'warning');
+                return;
+            }
+            try {
+                var payload = { contract_type: contractType, owner_name: ownerName, branch_id: branchId, expiry_date: expiryDate };
+                if (contractDate) payload.contract_date = contractDate;
+
+                await Supabase.addData('admin_contracts', payload);
+                document.getElementById('newContractType').value = '';
+                document.getElementById('newContractOwner').value = '';
+                document.getElementById('newContractBranch').value = '';
+                document.getElementById('newContractDate').value = '';
+                document.getElementById('newContractExpiry').value = '';
+                showToast('تمت إضافة العقد بنجاح', 'success');
+                await loadContracts();
+                await checkContractNotifications();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة العقد', 'error');
+            }
+        }
+
+        async function deleteContract(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا العقد؟')) return;
+            try {
+                await Supabase.deleteData('admin_contracts', id);
+                showToast('تم حذف العقد', 'success');
+                await loadContracts();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف العقد', 'error');
+            }
+        }
+
+        // ================================================================
+        // فحص العقود المنتهية/القاربة على الانتهاء وتسجيل إشعار مرة واحدة
+        // فقط لكل حالة (بيتفحص الإشعارات الموجودة فعلاً قبل ما يضيف جديد)
+        // ================================================================
+        async function checkContractNotifications() {
+            try {
+                var existingNotifs = await Supabase.fetchData('admin_notifications', { filter: { module: 'contracts' } });
+                var existingRefIds = (existingNotifs || []).map(function(n) { return n.ref_id + '|' + n.level; });
+
+                for (var i = 0; i < contractsCache.length; i++) {
+                    var c = contractsCache[i];
+                    if (!c.expiry_date) continue;
+                    var d = daysUntil(c.expiry_date);
+
+                    if (d < 0 && existingRefIds.indexOf(c.id + '|danger') === -1) {
+                        await Supabase.addData('admin_notifications', {
+                            module: 'contracts',
+                            title: 'عقد منتهي: ' + c.contract_type + ' (' + c.owner_name + ')',
+                            message: 'انتهى العقد منذ ' + Math.abs(d) + ' يوم',
+                            level: 'danger',
+                            ref_table: 'admin_contracts',
+                            ref_id: c.id
+                        });
+                    } else if (d >= 0 && d <= NOTIFY_EXPIRING_WITHIN_DAYS && existingRefIds.indexOf(c.id + '|warning') === -1) {
+                        await Supabase.addData('admin_notifications', {
+                            module: 'contracts',
+                            title: 'عقد قارب على الانتهاء: ' + c.contract_type + ' (' + c.owner_name + ')',
+                            message: 'باقي ' + d + ' يوم على انتهاء العقد',
+                            level: 'warning',
+                            ref_table: 'admin_contracts',
+                            ref_id: c.id
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('خطأ في فحص إشعارات العقود:', error);
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function notifySoon(moduleName) {
+            showToast('📦 موديول "' + moduleName + '" هيتم بناؤه في إحدى الخطوات القادمة', 'info');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

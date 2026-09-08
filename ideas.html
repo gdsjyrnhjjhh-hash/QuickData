@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%92%A1%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">تطوير الأفكار - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count {
+            background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--radius-full);
+        }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+        .tab-btn.tab-new.active { background: var(--info); border-color: var(--info); }
+        .tab-btn.tab-under_review.active { background: var(--warning); border-color: var(--warning); }
+        .tab-btn.tab-approved.active { background: var(--success); border-color: var(--success); }
+        .tab-btn.tab-implemented.active { background: var(--accent); border-color: var(--accent); }
+        .tab-btn.tab-rejected.active { background: var(--danger); border-color: var(--danger); }
+
+        .idea-form-grid { display: grid; grid-template-columns: 2fr 1.4fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .idea-form-grid .form-field { margin-bottom: 0; }
+        .idea-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .idea-form-grid input {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .idea-form-grid input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 768px) { .idea-form-grid { grid-template-columns: 1fr; } }
+
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+        .status-implemented { background: var(--accent-tint); color: var(--accent-dark); }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>حراء للسياحة</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="#" onclick="notifySoon('السيارات'); return false;"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="ideas.html" class="active"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود <span class="sidebar-badge">جديد</span></a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    تطوير الأفكار
+                    <small>أفكار وتطوير الأعمال</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">حراء للسياحة</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2>تطوير الأعمال والأفكار</h2>
+                    <p>تسجيل الأفكار ومتابعة حالتها من الاقتراح حتى التنفيذ</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card stat-blue">
+                    <span class="stat-icon"><i class="bi bi-stars"></i></span>
+                    <div class="stat-number" id="statNew">0</div>
+                    <div class="stat-label">أفكار جديدة</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-search"></i></span>
+                    <div class="stat-number" id="statReview">0</div>
+                    <div class="stat-label">قيد الدراسة</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <span class="stat-icon"><i class="bi bi-check-circle-fill"></i></span>
+                    <div class="stat-number" id="statApproved">0</div>
+                    <div class="stat-label">معتمدة</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-rocket-takeoff-fill"></i></span>
+                    <div class="stat-number" id="statImplemented">0</div>
+                    <div class="stat-label">مُنفَّذة</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل الأفكار. تأكد من تشغيل ملف admin_schema_step3.sql في Supabase.</span>
+                <button onclick="loadIdeasPage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إضافة فكرة جديدة ===== -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة فكرة جديدة</h5>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="idea-form-grid">
+                        <div class="form-field">
+                            <label for="newIdeaTitle">الفكرة</label>
+                            <input type="text" id="newIdeaTitle" placeholder="مثال: تطبيق نظام حجز إلكتروني للعملاء" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newIdeaDepartment">القسم المقترح</label>
+                            <input type="text" id="newIdeaDepartment" placeholder="مثال: قسم التسويق" />
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addIdea()">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== التبويبات ===== -->
+            <div class="tabs-bar">
+                <button class="tab-btn active" data-status="all" onclick="switchTab('all')">
+                    <i class="bi bi-lightbulb-fill"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
+                </button>
+                <button class="tab-btn tab-new" data-status="new" onclick="switchTab('new')">
+                    <i class="bi bi-stars"></i> جديدة <span class="tab-count" id="tabCountNew">0</span>
+                </button>
+                <button class="tab-btn tab-under_review" data-status="under_review" onclick="switchTab('under_review')">
+                    <i class="bi bi-search"></i> قيد الدراسة <span class="tab-count" id="tabCountReview">0</span>
+                </button>
+                <button class="tab-btn tab-approved" data-status="approved" onclick="switchTab('approved')">
+                    <i class="bi bi-check-circle-fill"></i> معتمدة <span class="tab-count" id="tabCountApproved">0</span>
+                </button>
+                <button class="tab-btn tab-implemented" data-status="implemented" onclick="switchTab('implemented')">
+                    <i class="bi bi-rocket-takeoff-fill"></i> منفّذة <span class="tab-count" id="tabCountImplemented">0</span>
+                </button>
+                <button class="tab-btn tab-rejected" data-status="rejected" onclick="switchTab('rejected')">
+                    <i class="bi bi-x-circle-fill"></i> مرفوضة <span class="tab-count" id="tabCountRejected">0</span>
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title" id="activeTabTitle"><i class="bi bi-lightbulb-fill"></i> كل الأفكار</h5>
+                    <span class="record-count" id="ideasCount">0 فكرة</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead>
+                            <tr><th>#</th><th>الفكرة</th><th>القسم المقترح</th><th>الحالة</th><th>تاريخ الإضافة</th><th>إجراءات</th></tr>
+                        </thead>
+                        <tbody id="ideasTableBody">
+                            <tr class="empty-state-row"><td colspan="6"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">حراء للسياحة — تطوير الأعمال والأفكار</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">موديول تطوير الأفكار</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var ideasCache = [];
+        var currentTab = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadIdeasPage });
+            if (!currentUser) return;
+            loadIdeasPage();
+        });
+
+        async function loadIdeasPage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadIdeas();
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة الأفكار:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        async function loadIdeas() {
+            var tbody = document.getElementById('ideasTableBody');
+            try {
+                ideasCache = await Supabase.fetchData('admin_ideas', { order: 'created_at' }) || [];
+                updateStatsAndTabs();
+                renderIdeasTable();
+            } catch (error) {
+                console.error('خطأ في تحميل الأفكار:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل الأفكار. تأكد من تشغيل admin_schema_step3.sql</td></tr>';
+                throw error;
+            }
+        }
+
+        function updateStatsAndTabs() {
+            var byStatus = function(s) { return ideasCache.filter(function(i) { return i.status === s; }); };
+
+            document.getElementById('statNew').textContent = byStatus('new').length;
+            document.getElementById('statReview').textContent = byStatus('under_review').length;
+            document.getElementById('statApproved').textContent = byStatus('approved').length;
+            document.getElementById('statImplemented').textContent = byStatus('implemented').length;
+
+            document.getElementById('tabCountAll').textContent = ideasCache.length;
+            document.getElementById('tabCountNew').textContent = byStatus('new').length;
+            document.getElementById('tabCountReview').textContent = byStatus('under_review').length;
+            document.getElementById('tabCountApproved').textContent = byStatus('approved').length;
+            document.getElementById('tabCountImplemented').textContent = byStatus('implemented').length;
+            document.getElementById('tabCountRejected').textContent = byStatus('rejected').length;
+        }
+
+        function switchTab(status) {
+            currentTab = status;
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-status') === status);
+            });
+            var titles = {
+                all: '<i class="bi bi-lightbulb-fill"></i> كل الأفكار',
+                new: '<i class="bi bi-stars"></i> أفكار جديدة',
+                under_review: '<i class="bi bi-search"></i> قيد الدراسة',
+                approved: '<i class="bi bi-check-circle-fill"></i> معتمدة',
+                implemented: '<i class="bi bi-rocket-takeoff-fill"></i> منفّذة',
+                rejected: '<i class="bi bi-x-circle-fill"></i> مرفوضة'
+            };
+            document.getElementById('activeTabTitle').innerHTML = titles[status];
+            renderIdeasTable();
+        }
+
+        function statusOptionsHtml(current) {
+            var options = [
+                ['new', 'جديدة'],
+                ['under_review', 'قيد الدراسة'],
+                ['approved', 'معتمدة'],
+                ['implemented', 'منفّذة'],
+                ['rejected', 'مرفوضة']
+            ];
+            return options.map(function(o) {
+                return '<option value="' + o[0] + '"' + (current === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+            }).join('');
+        }
+
+        function renderIdeasTable() {
+            var tbody = document.getElementById('ideasTableBody');
+            var filtered = currentTab === 'all' ? ideasCache : ideasCache.filter(function(i) { return i.status === currentTab; });
+            document.getElementById('ideasCount').textContent = filtered.length + ' فكرة';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>لا توجد أفكار في هذه القائمة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(idea, index) {
+                var dateStr = idea.created_at ? new Date(idea.created_at).toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(idea.title) + '</td>' +
+                        '<td>' + escapeHtml(idea.department || '—') + '</td>' +
+                        '<td>' +
+                            '<select class="status-select" onchange="changeIdeaStatus(\'' + idea.id + '\', this.value)">' +
+                                statusOptionsHtml(idea.status) +
+                            '</select>' +
+                        '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteIdea(\'' + idea.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addIdea() {
+            var title = document.getElementById('newIdeaTitle').value.trim();
+            var department = document.getElementById('newIdeaDepartment').value.trim();
+
+            if (!title) {
+                showToast('اكتب الفكرة أولاً', 'warning');
+                return;
+            }
+            try {
+                await Supabase.addData('admin_ideas', {
+                    title: title,
+                    department: department || null,
+                    status: 'new'
+                });
+                document.getElementById('newIdeaTitle').value = '';
+                document.getElementById('newIdeaDepartment').value = '';
+                switchTab('new');
+                showToast('تمت إضافة الفكرة بنجاح', 'success');
+                await loadIdeas();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة الفكرة', 'error');
+            }
+        }
+
+        async function changeIdeaStatus(id, newStatus) {
+            try {
+                await Supabase.updateData('admin_ideas', id, { status: newStatus, updated_at: new Date().toISOString() });
+                showToast('تم تحديث حالة الفكرة', 'success');
+                await loadIdeas();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة الفكرة', 'error');
+            }
+        }
+
+        async function deleteIdea(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه الفكرة؟')) return;
+            try {
+                await Supabase.deleteData('admin_ideas', id);
+                showToast('تم حذف الفكرة', 'success');
+                await loadIdeas();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف الفكرة', 'error');
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function notifySoon(moduleName) {
+            showToast('📦 موديول "' + moduleName + '" هيتم بناؤه في إحدى الخطوات القادمة', 'info');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
