@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%A8%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">التواصل بين الإدارات - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count {
+            background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--radius-full);
+        }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+        .tab-btn.tab-pending.active { background: var(--warning); border-color: var(--warning); }
+        .tab-btn.tab-in_progress.active { background: var(--info); border-color: var(--info); }
+        .tab-btn.tab-resolved.active { background: var(--success); border-color: var(--success); }
+
+        .correspondence-form-grid { display: grid; grid-template-columns: 1.8fr 1.2fr 1fr 1.6fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .correspondence-form-grid .form-field { margin-bottom: 0; }
+        .correspondence-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .correspondence-form-grid input, .correspondence-form-grid select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .correspondence-form-grid input:focus, .correspondence-form-grid select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 1000px) { .correspondence-form-grid { grid-template-columns: 1fr 1fr; } }
+
+        .dept-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .dept-filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+        .dept-filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+
+        .dept-tag {
+            font-family: var(--font-display); font-weight: 700; font-size: 11px; color: var(--accent-dark);
+            background: var(--bg); padding: 2px 9px; border-radius: var(--radius-full);
+        }
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>QuickData</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات</a></li>
+                <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات</a></li>
+                <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال</a></li>
+                <li><a href="correspondence.html" class="active"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود</a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    التواصل بين الإدارات
+                    <small>سجل المخاطبات بين الأقسام ومتابعة حالتها</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">QuickData</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2>التواصل بين الإدارات</h2>
+                    <p>تسجيل المخاطبات والطلبات بين أقسام الشركة ومتابعة حالة كل منها</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-send-fill"></i></span>
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">إجمالي المخاطبات</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <div class="stat-number" id="statPending">0</div>
+                    <div class="stat-label">قيد الانتظار</div>
+                </div>
+                <div class="stat-card stat-blue">
+                    <span class="stat-icon"><i class="bi bi-arrow-repeat"></i></span>
+                    <div class="stat-number" id="statInProgress">0</div>
+                    <div class="stat-label">قيد المتابعة</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <span class="stat-icon"><i class="bi bi-check-circle-fill"></i></span>
+                    <div class="stat-number" id="statResolved">0</div>
+                    <div class="stat-label">تم الإنجاز</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل بيانات التواصل بين الإدارات. تأكد من وجود جدول admin_correspondence.</span>
+                <button onclick="loadCorrespondencePage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إضافة مخاطبة جديدة ===== -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة مخاطبة جديدة</h5>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="correspondence-form-grid">
+                        <div class="form-field">
+                            <label for="newSubject">الموضوع</label>
+                            <input type="text" id="newSubject" placeholder="موضوع المخاطبة" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newDepartment">القسم</label>
+                            <input type="text" id="newDepartment" placeholder="مثال: المبيعات، الصيانة..." list="deptSuggestions" />
+                            <datalist id="deptSuggestions"></datalist>
+                        </div>
+                        <div class="form-field">
+                            <label for="newCorrDate">التاريخ</label>
+                            <input type="date" id="newCorrDate" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newCorrNotes">ملاحظات</label>
+                            <input type="text" id="newCorrNotes" placeholder="اختياري" />
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addCorrespondence()">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== فلتر القسم ===== -->
+            <div class="dept-filter-bar">
+                <label for="deptFilter"><i class="bi bi-diagram-3-fill"></i> فلترة بالقسم:</label>
+                <select id="deptFilter" onchange="renderCorrespondenceTable()">
+                    <option value="">كل الأقسام</option>
+                </select>
+            </div>
+
+            <!-- ===== التبويبات ===== -->
+            <div class="tabs-bar">
+                <button class="tab-btn active" data-status="all" onclick="switchTab('all')">
+                    <i class="bi bi-send-fill"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
+                </button>
+                <button class="tab-btn tab-pending" data-status="pending" onclick="switchTab('pending')">
+                    <i class="bi bi-hourglass-split"></i> قيد الانتظار <span class="tab-count" id="tabCountPending">0</span>
+                </button>
+                <button class="tab-btn tab-in_progress" data-status="in_progress" onclick="switchTab('in_progress')">
+                    <i class="bi bi-arrow-repeat"></i> قيد المتابعة <span class="tab-count" id="tabCountInProgress">0</span>
+                </button>
+                <button class="tab-btn tab-resolved" data-status="resolved" onclick="switchTab('resolved')">
+                    <i class="bi bi-check-circle-fill"></i> تم الإنجاز <span class="tab-count" id="tabCountResolved">0</span>
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title" id="activeTabTitle"><i class="bi bi-send-fill"></i> كل المخاطبات</h5>
+                    <span class="record-count" id="correspondenceCount">0 مخاطبة</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>الموضوع</th><th>القسم</th><th>التاريخ</th>
+                                <th>الحالة</th><th>ملاحظات</th><th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="correspondenceTableBody">
+                            <tr class="empty-state-row"><td colspan="7"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">QuickData — التواصل بين الإدارات</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">موديول التواصل بين الإدارات</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var correspondenceCache = [];
+        var currentTab = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadCorrespondencePage });
+            if (!currentUser) return;
+            loadCorrespondencePage();
+        });
+
+        async function loadCorrespondencePage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadCorrespondence();
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة التواصل بين الإدارات:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        async function loadCorrespondence() {
+            var tbody = document.getElementById('correspondenceTableBody');
+            try {
+                correspondenceCache = await Supabase.fetchData('admin_correspondence', { order: 'correspondence_date' }) || [];
+                updateStatsAndTabs();
+                populateDeptOptions();
+                renderCorrespondenceTable();
+            } catch (error) {
+                console.error('خطأ في تحميل المخاطبات:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل المخاطبات</td></tr>';
+                throw error;
+            }
+        }
+
+        function populateDeptOptions() {
+            var depts = correspondenceCache.map(function(c) { return c.department; }).filter(Boolean);
+            var unique = depts.filter(function(d, i) { return depts.indexOf(d) === i; }).sort(function(a, b) { return a.localeCompare(b, 'ar'); });
+
+            var filterSelect = document.getElementById('deptFilter');
+            var currentValue = filterSelect.value;
+            filterSelect.innerHTML = '<option value="">كل الأقسام</option>' + unique.map(function(d) {
+                return '<option value="' + escapeHtml(d) + '">' + escapeHtml(d) + '</option>';
+            }).join('');
+            filterSelect.value = currentValue;
+
+            document.getElementById('deptSuggestions').innerHTML = unique.map(function(d) {
+                return '<option value="' + escapeHtml(d) + '"></option>';
+            }).join('');
+        }
+
+        function updateStatsAndTabs() {
+            var byStatus = function(s) { return correspondenceCache.filter(function(c) { return (c.status || 'pending') === s; }); };
+
+            document.getElementById('statTotal').textContent = correspondenceCache.length;
+            document.getElementById('statPending').textContent = byStatus('pending').length;
+            document.getElementById('statInProgress').textContent = byStatus('in_progress').length;
+            document.getElementById('statResolved').textContent = byStatus('resolved').length;
+
+            document.getElementById('tabCountAll').textContent = correspondenceCache.length;
+            document.getElementById('tabCountPending').textContent = byStatus('pending').length;
+            document.getElementById('tabCountInProgress').textContent = byStatus('in_progress').length;
+            document.getElementById('tabCountResolved').textContent = byStatus('resolved').length;
+        }
+
+        function switchTab(status) {
+            currentTab = status;
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-status') === status);
+            });
+            var titles = {
+                all: '<i class="bi bi-send-fill"></i> كل المخاطبات',
+                pending: '<i class="bi bi-hourglass-split"></i> مخاطبات قيد الانتظار',
+                in_progress: '<i class="bi bi-arrow-repeat"></i> مخاطبات قيد المتابعة',
+                resolved: '<i class="bi bi-check-circle-fill"></i> مخاطبات تم إنجازها'
+            };
+            document.getElementById('activeTabTitle').innerHTML = titles[status];
+            renderCorrespondenceTable();
+        }
+
+        function statusBadge(c) {
+            var status = c.status || 'pending';
+            var map = {
+                pending: '<span class="status-badge status-pending">قيد الانتظار</span>',
+                in_progress: '<span class="status-badge status-info">قيد المتابعة</span>',
+                resolved: '<span class="status-badge status-active">تم الإنجاز</span>'
+            };
+            return map[status] || map.pending;
+        }
+
+        function renderCorrespondenceTable() {
+            var tbody = document.getElementById('correspondenceTableBody');
+            var deptFilter = document.getElementById('deptFilter').value;
+
+            var filtered = correspondenceCache.filter(function(c) {
+                if (currentTab !== 'all' && (c.status || 'pending') !== currentTab) return false;
+                if (deptFilter && c.department !== deptFilter) return false;
+                return true;
+            });
+            document.getElementById('correspondenceCount').textContent = filtered.length + ' مخاطبة';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><i class="bi bi-inbox"></i>لا توجد مخاطبات في هذه القائمة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(c, index) {
+                var dateStr = c.correspondence_date ? new Date(c.correspondence_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(c.subject) + '</td>' +
+                        '<td>' + (c.department ? '<span class="dept-tag">' + escapeHtml(c.department) + '</span>' : '—') + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' +
+                            '<select class="status-select" onchange="changeCorrespondenceStatus(\'' + c.id + '\', this.value)">' +
+                                '<option value="pending"' + ((c.status || 'pending') === 'pending' ? ' selected' : '') + '>قيد الانتظار</option>' +
+                                '<option value="in_progress"' + (c.status === 'in_progress' ? ' selected' : '') + '>قيد المتابعة</option>' +
+                                '<option value="resolved"' + (c.status === 'resolved' ? ' selected' : '') + '>تم الإنجاز</option>' +
+                            '</select>' +
+                        '</td>' +
+                        '<td>' + (c.notes ? escapeHtml(c.notes) : '—') + '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteCorrespondence(\'' + c.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addCorrespondence() {
+            var subject = document.getElementById('newSubject').value.trim();
+            var department = document.getElementById('newDepartment').value.trim();
+            var corrDate = document.getElementById('newCorrDate').value || null;
+            var notes = document.getElementById('newCorrNotes').value.trim();
+
+            if (!subject) {
+                showToast('اكتب موضوع المخاطبة أولاً', 'warning');
+                return;
+            }
+            try {
+                var payload = { subject: subject, department: department || null, notes: notes || null, status: 'pending' };
+                if (corrDate) payload.correspondence_date = corrDate;
+
+                await Supabase.addData('admin_correspondence', payload);
+                document.getElementById('newSubject').value = '';
+                document.getElementById('newDepartment').value = '';
+                document.getElementById('newCorrDate').value = '';
+                document.getElementById('newCorrNotes').value = '';
+                showToast('تمت إضافة المخاطبة بنجاح', 'success');
+                await loadCorrespondence();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة المخاطبة', 'error');
+            }
+        }
+
+        async function changeCorrespondenceStatus(id, newStatus) {
+            try {
+                await Supabase.updateData('admin_correspondence', id, { status: newStatus });
+                var c = correspondenceCache.find(function(x) { return x.id === id; });
+                if (c) c.status = newStatus;
+                updateStatsAndTabs();
+                showToast('تم تحديث حالة المخاطبة', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة المخاطبة', 'error');
+                await loadCorrespondence();
+            }
+        }
+
+        async function deleteCorrespondence(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه المخاطبة؟')) return;
+            try {
+                await Supabase.deleteData('admin_correspondence', id);
+                showToast('تم حذف المخاطبة', 'success');
+                await loadCorrespondence();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف المخاطبة', 'error');
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

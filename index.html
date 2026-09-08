@@ -62,7 +62,9 @@
             <ul class="nav-list">
                 <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge">جديد</span></a></li>
-                <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود <span class="sidebar-badge">جديد</span></a></li>
             </ul>
@@ -150,6 +152,21 @@
                     <div class="stat-number" id="statVehicles">0</div>
                     <div class="stat-label">سيارات نشطة</div>
                 </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-cart-fill"></i></span>
+                    <div class="stat-number" id="statPurchases">0</div>
+                    <div class="stat-label">إجمالي المشتريات</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-box-seam-fill"></i></span>
+                    <div class="stat-number" id="statHandovers">0</div>
+                    <div class="stat-label">سجلات استلام/تسليم</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-send-fill"></i></span>
+                    <div class="stat-number" id="statCorrespondence">0</div>
+                    <div class="stat-label">مخاطبات قيد الانتظار</div>
+                </div>
             </div>
 
             <!-- ===== MODULE CARDS ===== -->
@@ -162,10 +179,17 @@
                     <i class="bi bi-car-front-fill"></i>
                     <div><strong>السيارات</strong><span>الأسطول وحالته</span></div>
                 </a>
-                <a href="#" class="quick-action" onclick="notifySoon('المشتريات'); return false;">
-                    <span class="soon-tag">قريبًا</span>
+                <a href="purchases.html" class="quick-action">
                     <i class="bi bi-cart-fill"></i>
                     <div><strong>المشتريات</strong><span>الموردين وعروض الأسعار</span></div>
+                </a>
+                <a href="handovers.html" class="quick-action">
+                    <i class="bi bi-box-seam-fill"></i>
+                    <div><strong>استلام وتسليم الأعمال</strong><span>عهدة الموظفين</span></div>
+                </a>
+                <a href="correspondence.html" class="quick-action">
+                    <i class="bi bi-send-fill"></i>
+                    <div><strong>التواصل بين الإدارات</strong><span>المخاطبات بين الأقسام</span></div>
                 </a>
                 <a href="ideas.html" class="quick-action">
                     <i class="bi bi-lightbulb-fill"></i>
@@ -254,7 +278,7 @@
             var errorBanner = document.getElementById('errorBanner');
             errorBanner.classList.remove('show');
             try {
-                await Promise.all([loadBranches(), loadNotificationsCount(), loadTasksCount(), loadVehiclesCount()]);
+                await Promise.all([loadBranches(), loadNotificationsCount(), loadTasksCount(), loadVehiclesCount(), loadPurchasesCount(), loadHandoversCount(), loadCorrespondenceCount()]);
             } catch (error) {
                 console.error('خطأ في تحميل بيانات اللوحة:', error);
                 errorBanner.classList.add('show');
@@ -419,6 +443,36 @@
             } catch (error) {
                 console.error('خطأ في تحميل عدد السيارات:', error);
                 document.getElementById('statVehicles').textContent = '0';
+            }
+        }
+
+        async function loadPurchasesCount() {
+            try {
+                var purchases = await Supabase.fetchData('admin_purchases');
+                document.getElementById('statPurchases').textContent = (purchases || []).length;
+            } catch (error) {
+                console.error('خطأ في تحميل عدد المشتريات:', error);
+                document.getElementById('statPurchases').textContent = '0';
+            }
+        }
+
+        async function loadHandoversCount() {
+            try {
+                var handovers = await Supabase.fetchData('admin_handovers');
+                document.getElementById('statHandovers').textContent = (handovers || []).length;
+            } catch (error) {
+                console.error('خطأ في تحميل عدد سجلات الاستلام والتسليم:', error);
+                document.getElementById('statHandovers').textContent = '0';
+            }
+        }
+
+        async function loadCorrespondenceCount() {
+            try {
+                var pending = await Supabase.fetchData('admin_correspondence', { filter: { status: 'pending' } });
+                document.getElementById('statCorrespondence').textContent = (pending || []).length;
+            } catch (error) {
+                console.error('خطأ في تحميل عدد المخاطبات:', error);
+                document.getElementById('statCorrespondence').textContent = '0';
             }
         }
 

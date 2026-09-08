@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">استلام وتسليم الأعمال - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count {
+            background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--radius-full);
+        }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+        .tab-btn.tab-receive.active { background: var(--success); border-color: var(--success); }
+        .tab-btn.tab-deliver.active { background: var(--info); border-color: var(--info); }
+
+        .handover-form-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+        .handover-form-grid .form-field { margin-bottom: 0; }
+        .handover-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .handover-form-grid input, .handover-form-grid select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .handover-form-grid input:focus, .handover-form-grid select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 1000px) { .handover-form-grid { grid-template-columns: 1fr 1fr; } }
+
+        .items-checklist {
+            display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px;
+            padding: 12px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm);
+        }
+        .items-checklist .check-field { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+        .items-checklist input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+        .items-checklist .other-items-field { flex: 1; min-width: 200px; }
+        .items-checklist .other-items-field input {
+            width: 100%; padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 32px;
+        }
+        .notes-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .notes-row input {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+
+        .branch-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .branch-filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+        .branch-filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+
+        .items-cell { display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px; }
+        .item-tag { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-full); background: var(--bg); color: var(--text-secondary); border: 1px solid var(--border); }
+        .item-tag.other { color: var(--accent-dark); border-color: var(--accent); }
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>QuickData</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات</a></li>
+                <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات</a></li>
+                <li><a href="handovers.html" class="active"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود</a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    استلام وتسليم الأعمال
+                    <small>سجل استلام وتسليم عهدة الموظفين عند الالتحاق أو المغادرة</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">QuickData</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2>استلام وتسليم الأعمال</h2>
+                    <p>توثيق عهدة كل موظف (موبايل، سيارة، بريد إلكتروني، بيانات هندسية) عند الاستلام أو التسليم</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-box-seam-fill"></i></span>
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">إجمالي السجلات</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <span class="stat-icon"><i class="bi bi-box-arrow-in-down-left"></i></span>
+                    <div class="stat-number" id="statReceive">0</div>
+                    <div class="stat-label">استلام</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-box-arrow-up-right"></i></span>
+                    <div class="stat-number" id="statDeliver">0</div>
+                    <div class="stat-label">تسليم</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-pen-fill"></i></span>
+                    <div class="stat-number" id="statUnsigned">0</div>
+                    <div class="stat-label">بدون توقيع</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل بيانات الاستلام والتسليم. تأكد من وجود جدول admin_handovers.</span>
+                <button onclick="loadHandoversPage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إضافة سجل جديد ===== -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة سجل استلام/تسليم</h5>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="handover-form-grid">
+                        <div class="form-field">
+                            <label for="newEmployeeName">اسم الموظف</label>
+                            <input type="text" id="newEmployeeName" placeholder="اسم الموظف" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newDirection">الاتجاه</label>
+                            <select id="newDirection">
+                                <option value="receive">استلام</option>
+                                <option value="deliver">تسليم</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="newHandoverBranch">الفرع</label>
+                            <select id="newHandoverBranch">
+                                <option value="">— بدون فرع —</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="newHandoverDate">التاريخ</label>
+                            <input type="date" id="newHandoverDate" />
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addHandover()">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+
+                    <div class="items-checklist">
+                        <label class="check-field"><input type="checkbox" id="newHasMobile" /> موبايل</label>
+                        <label class="check-field"><input type="checkbox" id="newHasCar" /> سيارة</label>
+                        <label class="check-field"><input type="checkbox" id="newHasEmail" /> بريد إلكتروني</label>
+                        <label class="check-field"><input type="checkbox" id="newHasEngineering" /> بيانات هندسية</label>
+                        <div class="other-items-field">
+                            <input type="text" id="newOtherItems" placeholder="أصناف أخرى (اختياري)" />
+                        </div>
+                    </div>
+
+                    <div class="notes-row">
+                        <div class="form-field">
+                            <input type="text" id="newHandoverNotes" placeholder="ملاحظات (اختياري)" />
+                        </div>
+                        <label class="check-field" style="padding: 8px 12px;"><input type="checkbox" id="newSigned" /> موقّع بالفعل</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== فلتر الفرع ===== -->
+            <div class="branch-filter-bar">
+                <label for="branchFilter"><i class="bi bi-signpost-split-fill"></i> فلترة بالفرع:</label>
+                <select id="branchFilter" onchange="renderHandoversTable()">
+                    <option value="">كل الفروع</option>
+                </select>
+            </div>
+
+            <!-- ===== التبويبات ===== -->
+            <div class="tabs-bar">
+                <button class="tab-btn active" data-direction="all" onclick="switchTab('all')">
+                    <i class="bi bi-box-seam-fill"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
+                </button>
+                <button class="tab-btn tab-receive" data-direction="receive" onclick="switchTab('receive')">
+                    <i class="bi bi-box-arrow-in-down-left"></i> استلام <span class="tab-count" id="tabCountReceive">0</span>
+                </button>
+                <button class="tab-btn tab-deliver" data-direction="deliver" onclick="switchTab('deliver')">
+                    <i class="bi bi-box-arrow-up-right"></i> تسليم <span class="tab-count" id="tabCountDeliver">0</span>
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title" id="activeTabTitle"><i class="bi bi-box-seam-fill"></i> كل السجلات</h5>
+                    <span class="record-count" id="handoversCount">0 سجل</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>الموظف</th><th>الاتجاه</th><th>الفرع</th>
+                                <th>التاريخ</th><th>العهدة</th><th>ملاحظات</th><th>التوقيع</th><th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="handoversTableBody">
+                            <tr class="empty-state-row"><td colspan="9"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">QuickData — استلام وتسليم الأعمال</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">موديول استلام وتسليم الأعمال</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var handoversCache = [];
+        var branchesCache = [];
+        var currentTab = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadHandoversPage });
+            if (!currentUser) return;
+            loadHandoversPage();
+        });
+
+        async function loadHandoversPage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadBranchesForSelect();
+                await loadHandovers();
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة الاستلام والتسليم:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        async function loadBranchesForSelect() {
+            try {
+                branchesCache = await Supabase.fetchData('admin_branches', { order: 'name' }) || [];
+                var sorted = branchesCache.slice().sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ar'); });
+                var optionsHtml = sorted.map(function(b) {
+                    return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>';
+                }).join('');
+
+                var addSelect = document.getElementById('newHandoverBranch');
+                addSelect.innerHTML = '<option value="">— بدون فرع —</option>' + optionsHtml;
+
+                var filterSelect = document.getElementById('branchFilter');
+                filterSelect.innerHTML = '<option value="">كل الفروع</option>' + optionsHtml;
+            } catch (error) {
+                console.error('خطأ في تحميل الفروع:', error);
+            }
+        }
+
+        function branchName(id) {
+            if (!id) return '—';
+            var b = branchesCache.find(function(x) { return x.id === id; });
+            return b ? escapeHtml(b.name) : '—';
+        }
+
+        async function loadHandovers() {
+            var tbody = document.getElementById('handoversTableBody');
+            try {
+                handoversCache = await Supabase.fetchData('admin_handovers', { order: 'handover_date' }) || [];
+                updateStatsAndTabs();
+                renderHandoversTable();
+            } catch (error) {
+                console.error('خطأ في تحميل سجلات الاستلام والتسليم:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل السجلات</td></tr>';
+                throw error;
+            }
+        }
+
+        function updateStatsAndTabs() {
+            var byDirection = function(d) { return handoversCache.filter(function(h) { return h.direction === d; }); };
+            var unsigned = handoversCache.filter(function(h) { return !h.signed; });
+
+            document.getElementById('statTotal').textContent = handoversCache.length;
+            document.getElementById('statReceive').textContent = byDirection('receive').length;
+            document.getElementById('statDeliver').textContent = byDirection('deliver').length;
+            document.getElementById('statUnsigned').textContent = unsigned.length;
+
+            document.getElementById('tabCountAll').textContent = handoversCache.length;
+            document.getElementById('tabCountReceive').textContent = byDirection('receive').length;
+            document.getElementById('tabCountDeliver').textContent = byDirection('deliver').length;
+        }
+
+        function switchTab(direction) {
+            currentTab = direction;
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-direction') === direction);
+            });
+            var titles = {
+                all: '<i class="bi bi-box-seam-fill"></i> كل السجلات',
+                receive: '<i class="bi bi-box-arrow-in-down-left"></i> سجلات الاستلام',
+                deliver: '<i class="bi bi-box-arrow-up-right"></i> سجلات التسليم'
+            };
+            document.getElementById('activeTabTitle').innerHTML = titles[direction];
+            renderHandoversTable();
+        }
+
+        function directionLabel(d) {
+            return d === 'deliver'
+                ? '<span class="status-badge status-info"><i class="bi bi-box-arrow-up-right"></i> تسليم</span>'
+                : '<span class="status-badge status-active"><i class="bi bi-box-arrow-in-down-left"></i> استلام</span>';
+        }
+
+        function itemsCell(h) {
+            var tags = [];
+            if (h.has_mobile) tags.push('<span class="item-tag">موبايل</span>');
+            if (h.has_car) tags.push('<span class="item-tag">سيارة</span>');
+            if (h.has_email) tags.push('<span class="item-tag">بريد إلكتروني</span>');
+            if (h.has_engineering) tags.push('<span class="item-tag">بيانات هندسية</span>');
+            if (h.other_items) tags.push('<span class="item-tag other">' + escapeHtml(h.other_items) + '</span>');
+            if (!tags.length) return '<span>—</span>';
+            return '<div class="items-cell">' + tags.join('') + '</div>';
+        }
+
+        function renderHandoversTable() {
+            var tbody = document.getElementById('handoversTableBody');
+            var branchFilter = document.getElementById('branchFilter').value;
+
+            var filtered = handoversCache.filter(function(h) {
+                if (currentTab !== 'all' && h.direction !== currentTab) return false;
+                if (branchFilter && h.branch_id !== branchFilter) return false;
+                return true;
+            });
+            document.getElementById('handoversCount').textContent = filtered.length + ' سجل';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-inbox"></i>لا توجد سجلات في هذه القائمة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(h, index) {
+                var dateStr = h.handover_date ? new Date(h.handover_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(h.employee_name) + '</td>' +
+                        '<td>' + directionLabel(h.direction) + '</td>' +
+                        '<td>' + branchName(h.branch_id) + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + itemsCell(h) + '</td>' +
+                        '<td>' + (h.notes ? escapeHtml(h.notes) : '—') + '</td>' +
+                        '<td>' +
+                            '<select class="status-select" onchange="changeSignedStatus(\'' + h.id + '\', this.value)">' +
+                                '<option value="false"' + (!h.signed ? ' selected' : '') + '>غير موقّع</option>' +
+                                '<option value="true"' + (h.signed ? ' selected' : '') + '>موقّع</option>' +
+                            '</select>' +
+                        '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteHandover(\'' + h.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addHandover() {
+            var employeeName = document.getElementById('newEmployeeName').value.trim();
+            var direction = document.getElementById('newDirection').value;
+            var branchId = document.getElementById('newHandoverBranch').value || null;
+            var handoverDate = document.getElementById('newHandoverDate').value || null;
+            var hasMobile = document.getElementById('newHasMobile').checked;
+            var hasCar = document.getElementById('newHasCar').checked;
+            var hasEmail = document.getElementById('newHasEmail').checked;
+            var hasEngineering = document.getElementById('newHasEngineering').checked;
+            var otherItems = document.getElementById('newOtherItems').value.trim();
+            var notes = document.getElementById('newHandoverNotes').value.trim();
+            var signed = document.getElementById('newSigned').checked;
+
+            if (!employeeName) {
+                showToast('اكتب اسم الموظف أولاً', 'warning');
+                return;
+            }
+            try {
+                var payload = {
+                    employee_name: employeeName,
+                    direction: direction,
+                    branch_id: branchId,
+                    has_mobile: hasMobile,
+                    has_car: hasCar,
+                    has_email: hasEmail,
+                    has_engineering: hasEngineering,
+                    other_items: otherItems || null,
+                    notes: notes || null,
+                    signed: signed
+                };
+                if (handoverDate) payload.handover_date = handoverDate;
+
+                await Supabase.addData('admin_handovers', payload);
+                document.getElementById('newEmployeeName').value = '';
+                document.getElementById('newHandoverBranch').value = '';
+                document.getElementById('newHandoverDate').value = '';
+                document.getElementById('newHasMobile').checked = false;
+                document.getElementById('newHasCar').checked = false;
+                document.getElementById('newHasEmail').checked = false;
+                document.getElementById('newHasEngineering').checked = false;
+                document.getElementById('newOtherItems').value = '';
+                document.getElementById('newHandoverNotes').value = '';
+                document.getElementById('newSigned').checked = false;
+                showToast('تمت إضافة السجل بنجاح', 'success');
+                await loadHandovers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة السجل', 'error');
+            }
+        }
+
+        async function changeSignedStatus(id, value) {
+            try {
+                var signed = value === 'true';
+                await Supabase.updateData('admin_handovers', id, { signed: signed });
+                var h = handoversCache.find(function(x) { return x.id === id; });
+                if (h) h.signed = signed;
+                updateStatsAndTabs();
+                showToast('تم تحديث حالة التوقيع', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة التوقيع', 'error');
+                await loadHandovers();
+            }
+        }
+
+        async function deleteHandover(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+            try {
+                await Supabase.deleteData('admin_handovers', id);
+                showToast('تم حذف السجل', 'success');
+                await loadHandovers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف السجل', 'error');
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

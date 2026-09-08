@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9B%92%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">المشتريات - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        /* ===== تبويبات الموديول الفرعية (المشتريات / الموردين / عروض الأسعار) ===== */
+        .section-tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+        .section-tab-btn {
+            padding: 9px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 700; font-size: 13px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 7px; font-family: var(--font-display);
+        }
+        .section-tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .section-panel { display: none; }
+        .section-panel.active { display: block; }
+
+        /* ===== شبكات الفورم (مثل باقي الموديولات) ===== */
+        .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .form-grid.purchases-grid { grid-template-columns: 1fr 1fr 1.2fr 1fr 1.4fr 0.8fr 1.2fr 1fr auto; }
+        .form-grid.suppliers-grid { grid-template-columns: 1.4fr 1.2fr 1fr 1fr auto; }
+        .form-grid.offers-grid { grid-template-columns: 1.4fr 1fr 1.2fr 1.4fr auto; }
+        .form-grid .form-field { margin-bottom: 0; }
+        .form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .form-grid input, .form-grid select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .form-grid input:focus, .form-grid select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 1200px) {
+            .form-grid.purchases-grid, .form-grid.suppliers-grid, .form-grid.offers-grid { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        .branch-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .branch-filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+        .branch-filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .branch-filter-bar .btn-print {
+            margin-right: auto; padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text); font-weight: 700; font-size: 12.5px;
+            display: flex; align-items: center; gap: 6px; transition: var(--t-base);
+        }
+        .branch-filter-bar .btn-print:hover { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
+
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+        .attach-link { color: var(--accent-dark); font-weight: 700; font-size: 12px; }
+        .attach-link.disabled { color: var(--text-tertiary); font-weight: 500; }
+        .cost-cell { font-weight: 700; font-family: var(--font-display); }
+        .supplier-code-tag {
+            font-family: var(--font-display); font-weight: 700; font-size: 11px; color: var(--accent-dark);
+            background: var(--bg); padding: 1px 8px; border-radius: var(--radius-full);
+        }
+
+        /* ===== رأس التقرير (يظهر فقط عند الطباعة) ===== */
+        .print-report-header { display: none; }
+
+        @media print {
+            .sidebar, .sidebar-overlay, .navbar-custom, .footer-custom,
+            .section-tabs, .no-print, #errorBanner { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; }
+            .dashboard-content { padding: 0 !important; }
+            body { background: #fff !important; }
+            .print-report-header {
+                display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #333;
+            }
+            .print-report-header h2 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+            .print-report-header p { font-size: 12px; color: #555; }
+            .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
+            table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
+        }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>QuickData</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات</a></li>
+                <li><a href="purchases.html" class="active"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود</a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    المشتريات
+                    <small>المشتريات، الموردين، وعروض الأسعار</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">QuickData</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="print-report-header" id="printReportHeader">
+                <h2>تقرير المشتريات — اللوحة الإدارية QuickData</h2>
+                <p id="printReportMeta">تاريخ إصدار التقرير: —</p>
+            </div>
+
+            <div class="page-header no-print">
+                <div class="ph-left">
+                    <h2>المشتريات</h2>
+                    <p>تسجيل المشتريات، الموردين، وعروض الأسعار في مكان واحد</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid no-print">
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-cart-fill"></i></span>
+                    <div class="stat-number" id="statTotalPurchases">0</div>
+                    <div class="stat-label">إجمالي المشتريات</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-cash-stack"></i></span>
+                    <div class="stat-number" id="statTotalCost">0</div>
+                    <div class="stat-label">إجمالي التكلفة</div>
+                </div>
+                <div class="stat-card stat-blue">
+                    <span class="stat-icon"><i class="bi bi-people-fill"></i></span>
+                    <div class="stat-number" id="statSuppliers">0</div>
+                    <div class="stat-label">الموردون المسجّلون</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-tags-fill"></i></span>
+                    <div class="stat-number" id="statOffers">0</div>
+                    <div class="stat-label">عروض الأسعار</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل بيانات المشتريات. تأكد من وجود جداول admin_purchases, admin_suppliers, admin_price_offers.</span>
+                <button onclick="loadPurchasesPage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== تبويبات الموديول ===== -->
+            <div class="section-tabs no-print">
+                <button class="section-tab-btn active" data-section="purchases" onclick="switchSection('purchases')">
+                    <i class="bi bi-cart-fill"></i> المشتريات
+                </button>
+                <button class="section-tab-btn" data-section="suppliers" onclick="switchSection('suppliers')">
+                    <i class="bi bi-people-fill"></i> الموردون
+                </button>
+                <button class="section-tab-btn" data-section="offers" onclick="switchSection('offers')">
+                    <i class="bi bi-tags-fill"></i> عروض الأسعار
+                </button>
+            </div>
+
+            <!-- ================================================================ -->
+            <!-- قسم: المشتريات -->
+            <!-- ================================================================ -->
+            <div class="section-panel active" id="section-purchases">
+
+                <div class="panel no-print" style="margin-bottom: 20px;">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة عملية شراء</h5>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-grid purchases-grid">
+                            <div class="form-field">
+                                <label for="newPurchaseDate">تاريخ الشراء</label>
+                                <input type="date" id="newPurchaseDate" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseType">نوع الشراء</label>
+                                <input type="text" id="newPurchaseType" placeholder="مثال: مستلزمات مكتبية" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseSupplier">المورد</label>
+                                <select id="newPurchaseSupplier">
+                                    <option value="">— بدون مورد —</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseBranch">الفرع</label>
+                                <select id="newPurchaseBranch">
+                                    <option value="">— بدون فرع —</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseDescription">وصف الصنف</label>
+                                <input type="text" id="newPurchaseDescription" placeholder="وصف مختصر للمشترى" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseCost">التكلفة</label>
+                                <input type="number" id="newPurchaseCost" placeholder="0" min="0" step="0.01" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseAttachment">رابط المرفق (فاتورة)</label>
+                                <input type="text" id="newPurchaseAttachment" placeholder="اختياري" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newPurchaseNotes">ملاحظات</label>
+                                <input type="text" id="newPurchaseNotes" placeholder="اختياري" />
+                            </div>
+                            <button class="btn-action btn-primary" onclick="addPurchase()">
+                                <i class="bi bi-plus-lg"></i> إضافة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="branch-filter-bar no-print">
+                    <label for="purchaseBranchFilter"><i class="bi bi-signpost-split-fill"></i> فلترة بالفرع:</label>
+                    <select id="purchaseBranchFilter" onchange="renderPurchasesTable()">
+                        <option value="">كل الفروع</option>
+                    </select>
+                    <button class="btn-print" onclick="printPurchasesReport()">
+                        <i class="bi bi-printer-fill"></i> طباعة التقرير
+                    </button>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-cart-fill"></i> سجل المشتريات</h5>
+                        <span class="record-count" id="purchasesCount">0 عملية</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th>#</th><th>التاريخ</th><th>نوع الشراء</th><th>المورد</th><th>الفرع</th>
+                                    <th>الوصف</th><th>التكلفة</th><th>المرفق</th><th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="purchasesTableBody">
+                                <tr class="empty-state-row"><td colspan="9"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================ -->
+            <!-- قسم: الموردون -->
+            <!-- ================================================================ -->
+            <div class="section-panel" id="section-suppliers">
+
+                <div class="panel" style="margin-bottom: 20px;">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-person-plus-fill"></i> إضافة مورد جديد</h5>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-grid suppliers-grid">
+                            <div class="form-field">
+                                <label for="newSupplierName">اسم المورد</label>
+                                <input type="text" id="newSupplierName" placeholder="مثال: مؤسسة النور للتوريدات" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newSupplierActivity">النشاط</label>
+                                <input type="text" id="newSupplierActivity" placeholder="مثال: أدوات مكتبية" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newSupplierMobile">رقم الموبايل</label>
+                                <input type="text" id="newSupplierMobile" placeholder="اختياري" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newSupplierRegDate">تاريخ التسجيل</label>
+                                <input type="date" id="newSupplierRegDate" />
+                            </div>
+                            <button class="btn-action btn-primary" onclick="addSupplier()">
+                                <i class="bi bi-plus-lg"></i> إضافة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-people-fill"></i> الموردون المسجّلون</h5>
+                        <span class="record-count" id="suppliersCount">0 مورد</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table-custom">
+                            <thead>
+                                <tr><th>#</th><th>الكود</th><th>اسم المورد</th><th>النشاط</th><th>الموبايل</th><th>تاريخ التسجيل</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody id="suppliersTableBody">
+                                <tr class="empty-state-row"><td colspan="7"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================ -->
+            <!-- قسم: عروض الأسعار -->
+            <!-- ================================================================ -->
+            <div class="section-panel" id="section-offers">
+
+                <div class="panel" style="margin-bottom: 20px;">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة عرض سعر</h5>
+                    </div>
+                    <div style="padding: 16px;">
+                        <div class="form-grid offers-grid">
+                            <div class="form-field">
+                                <label for="newOfferName">اسم العرض</label>
+                                <input type="text" id="newOfferName" placeholder="مثال: عرض توريد أثاث مكتبي" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newOfferDate">تاريخ العرض</label>
+                                <input type="date" id="newOfferDate" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newOfferEntity">اسم الجهة</label>
+                                <input type="text" id="newOfferEntity" placeholder="اسم الشركة/الجهة مقدمة العرض" />
+                            </div>
+                            <div class="form-field">
+                                <label for="newOfferNotes">ملاحظات</label>
+                                <input type="text" id="newOfferNotes" placeholder="اختياري" />
+                            </div>
+                            <button class="btn-action btn-primary" onclick="addOffer()">
+                                <i class="bi bi-plus-lg"></i> إضافة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-tags-fill"></i> عروض الأسعار</h5>
+                        <span class="record-count" id="offersCount">0 عرض</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="table-custom">
+                            <thead>
+                                <tr><th>#</th><th>اسم العرض</th><th>التاريخ</th><th>الجهة</th><th>الحالة</th><th>إجراءات</th></tr>
+                            </thead>
+                            <tbody id="offersTableBody">
+                                <tr class="empty-state-row"><td colspan="6"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">QuickData — المشتريات</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">موديول المشتريات</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var purchasesCache = [];
+        var suppliersCache = [];
+        var offersCache = [];
+        var branchesCache = [];
+        var currentSection = 'purchases';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadPurchasesPage });
+            if (!currentUser) return;
+
+            var todayStr = new Date().toISOString().slice(0, 10);
+            var purchaseDateInput = document.getElementById('newPurchaseDate');
+            if (purchaseDateInput) purchaseDateInput.value = todayStr;
+            var supplierRegInput = document.getElementById('newSupplierRegDate');
+            if (supplierRegInput) supplierRegInput.value = todayStr;
+            var offerDateInput = document.getElementById('newOfferDate');
+            if (offerDateInput) offerDateInput.value = todayStr;
+
+            loadPurchasesPage();
+        });
+
+        async function loadPurchasesPage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadBranchesForSelect();
+                await Promise.all([loadSuppliers(), loadPurchases(), loadOffers()]);
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة المشتريات:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        // ================================================================
+        // التبويبات الفرعية
+        // ================================================================
+        function switchSection(section) {
+            currentSection = section;
+            document.querySelectorAll('.section-tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-section') === section);
+            });
+            document.querySelectorAll('.section-panel').forEach(function(panel) {
+                panel.classList.toggle('active', panel.id === 'section-' + section);
+            });
+        }
+
+        // ================================================================
+        // الفروع (للفلترة والفورم)
+        // ================================================================
+        async function loadBranchesForSelect() {
+            try {
+                branchesCache = await Supabase.fetchData('admin_branches', { order: 'name' }) || [];
+                var sorted = branchesCache.slice().sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ar'); });
+                var optionsHtml = sorted.map(function(b) {
+                    return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>';
+                }).join('');
+
+                var formSelect = document.getElementById('newPurchaseBranch');
+                formSelect.innerHTML = '<option value="">— بدون فرع —</option>' + optionsHtml;
+
+                var filterSelect = document.getElementById('purchaseBranchFilter');
+                filterSelect.innerHTML = '<option value="">كل الفروع</option>' + optionsHtml;
+            } catch (error) {
+                console.error('خطأ في تحميل الفروع:', error);
+            }
+        }
+
+        function branchName(id) {
+            if (!id) return '—';
+            var b = branchesCache.find(function(x) { return x.id === id; });
+            return b ? escapeHtml(b.name) : '—';
+        }
+
+        // ================================================================
+        // الموردون
+        // ================================================================
+        async function loadSuppliers() {
+            var tbody = document.getElementById('suppliersTableBody');
+            try {
+                suppliersCache = await Supabase.fetchData('admin_suppliers', { order: 'supplier_code' }) || [];
+                document.getElementById('statSuppliers').textContent = suppliersCache.length;
+
+                var supplierSelect = document.getElementById('newPurchaseSupplier');
+                var sorted = suppliersCache.slice().sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ar'); });
+                supplierSelect.innerHTML = '<option value="">— بدون مورد —</option>' + sorted.map(function(s) {
+                    return '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>';
+                }).join('');
+
+                renderSuppliersTable();
+            } catch (error) {
+                console.error('خطأ في تحميل الموردين:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل الموردين</td></tr>';
+                throw error;
+            }
+        }
+
+        function supplierName(id) {
+            if (!id) return '—';
+            var s = suppliersCache.find(function(x) { return x.id === id; });
+            return s ? escapeHtml(s.name) : '—';
+        }
+
+        function renderSuppliersTable() {
+            var tbody = document.getElementById('suppliersTableBody');
+            document.getElementById('suppliersCount').textContent = suppliersCache.length + ' مورد';
+
+            if (!suppliersCache.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><i class="bi bi-inbox"></i>لا يوجد موردون مسجّلون بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = suppliersCache.map(function(s, index) {
+                var regDateStr = s.registration_date ? new Date(s.registration_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td><span class="supplier-code-tag">#' + escapeHtml(s.supplier_code) + '</span></td>' +
+                        '<td>' + escapeHtml(s.name) + '</td>' +
+                        '<td>' + escapeHtml(s.activity || '—') + '</td>' +
+                        '<td>' + escapeHtml(s.mobile || '—') + '</td>' +
+                        '<td>' + regDateStr + '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteSupplier(\'' + s.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addSupplier() {
+            var name = document.getElementById('newSupplierName').value.trim();
+            var activity = document.getElementById('newSupplierActivity').value.trim();
+            var mobile = document.getElementById('newSupplierMobile').value.trim();
+            var regDate = document.getElementById('newSupplierRegDate').value || null;
+
+            if (!name) {
+                showToast('اكتب اسم المورد أولاً', 'warning');
+                return;
+            }
+            try {
+                var payload = { name: name, activity: activity || null, mobile: mobile || null };
+                if (regDate) payload.registration_date = regDate;
+
+                await Supabase.addData('admin_suppliers', payload);
+                document.getElementById('newSupplierName').value = '';
+                document.getElementById('newSupplierActivity').value = '';
+                document.getElementById('newSupplierMobile').value = '';
+                showToast('تمت إضافة المورد بنجاح', 'success');
+                await loadSuppliers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة المورد', 'error');
+            }
+        }
+
+        async function deleteSupplier(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا المورد؟')) return;
+            try {
+                await Supabase.deleteData('admin_suppliers', id);
+                showToast('تم حذف المورد', 'success');
+                await loadSuppliers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف المورد', 'error');
+            }
+        }
+
+        // ================================================================
+        // المشتريات
+        // ================================================================
+        async function loadPurchases() {
+            var tbody = document.getElementById('purchasesTableBody');
+            try {
+                purchasesCache = await Supabase.fetchData('admin_purchases', { order: 'purchase_date' }) || [];
+                document.getElementById('statTotalPurchases').textContent = purchasesCache.length;
+
+                var totalCost = purchasesCache.reduce(function(sum, p) { return sum + (parseFloat(p.cost) || 0); }, 0);
+                document.getElementById('statTotalCost').textContent = totalCost.toLocaleString('ar-EG');
+
+                renderPurchasesTable();
+            } catch (error) {
+                console.error('خطأ في تحميل المشتريات:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل المشتريات</td></tr>';
+                throw error;
+            }
+        }
+
+        function renderPurchasesTable() {
+            var tbody = document.getElementById('purchasesTableBody');
+            var branchFilter = document.getElementById('purchaseBranchFilter').value;
+            var filtered = purchasesCache.filter(function(p) { return !branchFilter || p.branch_id === branchFilter; });
+
+            document.getElementById('purchasesCount').textContent = filtered.length + ' عملية';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-inbox"></i>لا توجد مشتريات مسجّلة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(p, index) {
+                var dateStr = p.purchase_date ? new Date(p.purchase_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                var costStr = (parseFloat(p.cost) || 0).toLocaleString('ar-EG');
+                var attachHtml = p.attachment_url
+                    ? '<a class="attach-link" href="' + escapeHtml(p.attachment_url) + '" target="_blank" rel="noopener"><i class="bi bi-paperclip"></i> عرض</a>'
+                    : '<span class="attach-link disabled">—</span>';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + escapeHtml(p.purchase_type || '—') + '</td>' +
+                        '<td>' + supplierName(p.supplier_id) + '</td>' +
+                        '<td>' + branchName(p.branch_id) + '</td>' +
+                        '<td>' + escapeHtml(p.item_description || '—') + '</td>' +
+                        '<td class="cost-cell">' + costStr + '</td>' +
+                        '<td>' + attachHtml + '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deletePurchase(\'' + p.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addPurchase() {
+            var purchaseDate = document.getElementById('newPurchaseDate').value || null;
+            var purchaseType = document.getElementById('newPurchaseType').value.trim();
+            var supplierId = document.getElementById('newPurchaseSupplier').value || null;
+            var branchId = document.getElementById('newPurchaseBranch').value || null;
+            var description = document.getElementById('newPurchaseDescription').value.trim();
+            var cost = document.getElementById('newPurchaseCost').value;
+            var attachment = document.getElementById('newPurchaseAttachment').value.trim();
+            var notes = document.getElementById('newPurchaseNotes').value.trim();
+
+            if (!purchaseType || !description) {
+                showToast('اكتب نوع الشراء ووصف الصنف أولاً', 'warning');
+                return;
+            }
+            try {
+                var payload = {
+                    purchase_type: purchaseType,
+                    supplier_id: supplierId,
+                    branch_id: branchId,
+                    item_description: description,
+                    cost: cost ? parseFloat(cost) : null,
+                    attachment_url: attachment || null,
+                    notes: notes || null
+                };
+                if (purchaseDate) payload.purchase_date = purchaseDate;
+
+                await Supabase.addData('admin_purchases', payload);
+                document.getElementById('newPurchaseType').value = '';
+                document.getElementById('newPurchaseSupplier').value = '';
+                document.getElementById('newPurchaseBranch').value = '';
+                document.getElementById('newPurchaseDescription').value = '';
+                document.getElementById('newPurchaseCost').value = '';
+                document.getElementById('newPurchaseAttachment').value = '';
+                document.getElementById('newPurchaseNotes').value = '';
+                showToast('تمت إضافة عملية الشراء بنجاح', 'success');
+                await loadPurchases();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة عملية الشراء', 'error');
+            }
+        }
+
+        async function deletePurchase(id) {
+            if (!confirm('هل أنت متأكد من حذف عملية الشراء هذه؟')) return;
+            try {
+                await Supabase.deleteData('admin_purchases', id);
+                showToast('تم حذف عملية الشراء', 'success');
+                await loadPurchases();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف عملية الشراء', 'error');
+            }
+        }
+
+        function printPurchasesReport() {
+            var branchFilter = document.getElementById('purchaseBranchFilter').value;
+            var branchLabel = branchFilter ? branchName(branchFilter) : 'كل الفروع';
+            var now = new Date();
+            var nowStr = now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+            document.getElementById('printReportMeta').textContent =
+                'الفرع: ' + branchLabel + ' | تاريخ إصدار التقرير: ' + nowStr;
+
+            switchSection('purchases');
+            window.print();
+        }
+
+        // ================================================================
+        // عروض الأسعار
+        // ================================================================
+        async function loadOffers() {
+            var tbody = document.getElementById('offersTableBody');
+            try {
+                offersCache = await Supabase.fetchData('admin_price_offers', { order: 'offer_date' }) || [];
+                document.getElementById('statOffers').textContent = offersCache.length;
+                renderOffersTable();
+            } catch (error) {
+                console.error('خطأ في تحميل عروض الأسعار:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل عروض الأسعار</td></tr>';
+                throw error;
+            }
+        }
+
+        function renderOffersTable() {
+            var tbody = document.getElementById('offersTableBody');
+            document.getElementById('offersCount').textContent = offersCache.length + ' عرض';
+
+            if (!offersCache.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>لا توجد عروض أسعار مسجّلة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = offersCache.map(function(o, index) {
+                var dateStr = o.offer_date ? new Date(o.offer_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(o.offer_name) + '</td>' +
+                        '<td>' + dateStr + '</td>' +
+                        '<td>' + escapeHtml(o.entity_name || '—') + '</td>' +
+                        '<td>' +
+                            '<select class="status-select" onchange="changeOfferStatus(\'' + o.id + '\', this.value)">' +
+                                '<option value="under_review"' + (o.status === 'under_review' ? ' selected' : '') + '>قيد الدراسة</option>' +
+                                '<option value="accepted"' + (o.status === 'accepted' ? ' selected' : '') + '>مقبول</option>' +
+                                '<option value="rejected"' + (o.status === 'rejected' ? ' selected' : '') + '>مرفوض</option>' +
+                            '</select>' +
+                        '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteOffer(\'' + o.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addOffer() {
+            var offerName = document.getElementById('newOfferName').value.trim();
+            var offerDate = document.getElementById('newOfferDate').value || null;
+            var entityName = document.getElementById('newOfferEntity').value.trim();
+            var notes = document.getElementById('newOfferNotes').value.trim();
+
+            if (!offerName) {
+                showToast('اكتب اسم عرض السعر أولاً', 'warning');
+                return;
+            }
+            try {
+                var payload = { offer_name: offerName, entity_name: entityName || null, notes: notes || null, status: 'under_review' };
+                if (offerDate) payload.offer_date = offerDate;
+
+                await Supabase.addData('admin_price_offers', payload);
+                document.getElementById('newOfferName').value = '';
+                document.getElementById('newOfferEntity').value = '';
+                document.getElementById('newOfferNotes').value = '';
+                showToast('تمت إضافة عرض السعر بنجاح', 'success');
+                await loadOffers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة عرض السعر', 'error');
+            }
+        }
+
+        async function changeOfferStatus(id, newStatus) {
+            try {
+                await Supabase.updateData('admin_price_offers', id, { status: newStatus });
+                var offer = offersCache.find(function(o) { return o.id === id; });
+                if (offer) offer.status = newStatus;
+                showToast('تم تحديث حالة عرض السعر', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة عرض السعر', 'error');
+                await loadOffers();
+            }
+        }
+
+        async function deleteOffer(id) {
+            if (!confirm('هل أنت متأكد من حذف عرض السعر هذا؟')) return;
+            try {
+                await Supabase.deleteData('admin_price_offers', id);
+                showToast('تم حذف عرض السعر', 'success');
+                await loadOffers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف عرض السعر', 'error');
+            }
+        }
+
+        // ================================================================
+        // الإشعارات (نفس نمط باقي الموديولات)
+        // ================================================================
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
