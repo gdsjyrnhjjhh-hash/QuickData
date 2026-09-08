@@ -539,71 +539,72 @@ body.dark-mode .footer-custom .footer-link:hover { color: var(--accent-light); }
 
 /* ================================================================
    طلب مخصص: نصوص بولد وبألوان زاهية داخل المحتوى الرئيسي
-   (يستثني الشريط الجانبي .sidebar تماماً)
+   (يستثني الشريط الجانبي .sidebar، ويستثني صفحة الدعم والتواصل
+   عبر كلاس body.no-vivid-text)
    ================================================================ */
-.main-content,
-.main-content * {
+body:not(.no-vivid-text) .main-content,
+body:not(.no-vivid-text) .main-content * {
     font-weight: 700 !important;
 }
 
-.main-content h1,
-.main-content h2,
-.main-content h3 {
+body:not(.no-vivid-text) .main-content h1,
+body:not(.no-vivid-text) .main-content h2,
+body:not(.no-vivid-text) .main-content h3 {
     color: var(--vivid-5) !important;
 }
-.main-content h4,
-.main-content h5,
-.main-content h6 {
+body:not(.no-vivid-text) .main-content h4,
+body:not(.no-vivid-text) .main-content h5,
+body:not(.no-vivid-text) .main-content h6 {
     color: var(--vivid-4) !important;
 }
-.main-content p {
+body:not(.no-vivid-text) .main-content p {
     color: var(--vivid-7) !important;
 }
-.main-content td {
+body:not(.no-vivid-text) .main-content td {
     color: var(--vivid-4) !important;
 }
-.main-content th {
+body:not(.no-vivid-text) .main-content th {
     color: var(--vivid-1) !important;
 }
-.main-content label,
-.main-content .form-label {
+body:not(.no-vivid-text) .main-content label,
+body:not(.no-vivid-text) .main-content .form-label {
     color: var(--vivid-8) !important;
 }
-.main-content li:not(.nav-list li) {
+body:not(.no-vivid-text) .main-content li:not(.nav-list li) {
     color: var(--vivid-6) !important;
 }
-.main-content strong {
+body:not(.no-vivid-text) .main-content strong {
     color: var(--vivid-1) !important;
 }
-.main-content small {
+body:not(.no-vivid-text) .main-content small {
     color: var(--vivid-2) !important;
 }
-.main-content .stat-number {
+body:not(.no-vivid-text) .main-content .stat-number {
     color: var(--vivid-1) !important;
 }
-.main-content .stat-label {
+body:not(.no-vivid-text) .main-content .stat-label {
     color: var(--vivid-7) !important;
 }
-.main-content span:not(.badge):not(.badge-admin):not(.badge-finance):not(.badge-user):not(.notification-dot):not(.soon-tag):not(.footer-version):not(.footer-divider):not(.stat-icon):not(.user-avatar) {
+body:not(.no-vivid-text) .main-content span:not(.badge):not(.badge-admin):not(.badge-finance):not(.badge-user):not(.notification-dot):not(.soon-tag):not(.footer-version):not(.footer-divider):not(.stat-icon):not(.user-avatar) {
     color: var(--vivid-2) !important;
 }
 
 /* استثناء الشارات والأزرار والأيقونات من تغيير اللون (تبقى بألوانها الدلالية) مع الحفاظ على الخط البارز */
-.main-content .badge,
-.main-content .badge-admin,
-.main-content .badge-finance,
-.main-content .badge-user,
-.main-content .btn,
-.main-content .btn-primary,
-.main-content .btn-outline,
-.main-content .btn-success,
-.main-content .btn-danger,
-.main-content .nav-btn,
-.main-content .stat-icon,
-.main-content i,
-.main-content .error-banner,
-.main-content .toast-notification {
+body:not(.no-vivid-text) .main-content .badge,
+body:not(.no-vivid-text) .main-content .badge-admin,
+body:not(.no-vivid-text) .main-content .badge-finance,
+body:not(.no-vivid-text) .main-content .badge-user,
+body:not(.no-vivid-text) .main-content .btn,
+body:not(.no-vivid-text) .main-content .btn-primary,
+body:not(.no-vivid-text) .main-content .btn-outline,
+body:not(.no-vivid-text) .main-content .btn-success,
+body:not(.no-vivid-text) .main-content .btn-danger,
+body:not(.no-vivid-text) .main-content .nav-btn,
+body:not(.no-vivid-text) .main-content .stat-icon,
+body:not(.no-vivid-text) .main-content i,
+body:not(.no-vivid-text) .main-content .error-banner,
+body:not(.no-vivid-text) .main-content .toast-notification {
     color: inherit;
 }
-.main-content .error-banner { color: var(--danger) !important; }
-.main-content .toast-notification { color: inherit !important; }
+body:not(.no-vivid-text) .main-content .error-banner { color: var(--danger) !important; }
+body:not(.no-vivid-text) .main-content .toast-notification { color: inherit !important; }
