@@ -469,7 +469,7 @@ var _systemSettings = null;
 
 function getDefaultSettings() {
     return {
-        systemName: 'حراء للسياحة',
+        systemName: 'QuickData',
         language: 'ar',
         currency: 'SAR',
         dateFormat: 'ar',
@@ -530,7 +530,7 @@ async function getUserSettings() {
                 if (data && data.length > 0) {
                     var settings = data[0];
                     var result = {
-                        systemName: settings.system_name || 'حراء للسياحة',
+                        systemName: settings.system_name || 'QuickData',
                         language: settings.language || 'ar',
                         currency: settings.currency || 'SAR',
                         dateFormat: settings.date_format || 'ar',
@@ -584,7 +584,7 @@ async function saveUserSettings(settings) {
         // تحويل كائن الإعدادات إلى صيغة الجدول
         var dbData = {
             user_id: user.id,
-            system_name: settings.systemName || 'حراء للسياحة',
+            system_name: settings.systemName || 'QuickData',
             language: settings.language || 'ar',
             currency: settings.currency || 'SAR',
             date_format: settings.dateFormat || 'ar',
@@ -1881,7 +1881,7 @@ function applySystemLogo() {
 
 function getSystemName() {
     var settings = _systemSettings || getLocalSettings();
-    return settings.systemName || 'حراء للسياحة';
+    return settings.systemName || 'QuickData';
 }
 
 function getSystemSettings() {
@@ -1943,15 +1943,14 @@ function applySystemName() {
     
     var brandTexts = document.querySelectorAll('.brand-text');
     brandTexts.forEach(function(el) {
-        var html = el.innerHTML;
-        if (html.includes('قصر') || html.includes('حراء') || html.includes('النظام المحاسبي')) {
-            el.innerHTML = systemName + ' <small>النظام المحاسبي المتكامل</small>';
+        if (!el.innerHTML.includes(systemName)) {
+            el.innerHTML = systemName;
         }
     });
     
     var navbarTexts = document.querySelectorAll('.navbar-logo-text');
     navbarTexts.forEach(function(el) {
-        if (el.textContent.includes('قصر') || el.textContent.includes('حراء')) {
+        if (!el.textContent.includes(systemName)) {
             el.innerHTML = systemName;
         }
     });

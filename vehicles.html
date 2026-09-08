@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9A%97%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">السيارات - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count {
+            background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700;
+            padding: 1px 7px; border-radius: var(--radius-full);
+        }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+        .tab-btn.tab-active_v.active { background: var(--success); border-color: var(--success); }
+        .tab-btn.tab-parked.active { background: var(--info); border-color: var(--info); }
+        .tab-btn.tab-for_sale.active { background: var(--warning); border-color: var(--warning); }
+        .tab-btn.tab-retired.active { background: var(--danger); border-color: var(--danger); }
+
+        .vehicle-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .vehicle-form-grid .form-field { margin-bottom: 0; }
+        .vehicle-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .vehicle-form-grid input, .vehicle-form-grid select {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .vehicle-form-grid input:focus, .vehicle-form-grid select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 1100px) { .vehicle-form-grid { grid-template-columns: 1fr 1fr 1fr; } }
+
+        .branch-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .branch-filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); }
+        .branch-filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+
+        .expiry-cell { display: flex; flex-direction: column; gap: 2px; }
+        .expiry-tag { font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-full); width: fit-content; }
+        .expiry-tag.warn { background: var(--warning-bg); color: var(--warning); }
+        .expiry-tag.danger { background: var(--danger-bg); color: var(--danger); }
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>QuickData</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="vehicles.html" class="active"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود</a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    السيارات
+                    <small>سيارات الشركة وتواريخ الاستمارة والفحص والتأمين</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">QuickData</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="page-header">
+                <div class="ph-left">
+                    <h2>السيارات</h2>
+                    <p>سجل سيارات الشركة، حالتها، وتنبيهات انتهاء الاستمارة والفحص والتأمين</p>
+                </div>
+                <div class="ph-right">
+                    <strong>اليوم</strong>
+                    <span id="headerDate">جاري التحميل...</span>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-car-front-fill"></i></span>
+                    <div class="stat-number" id="statTotal">0</div>
+                    <div class="stat-label">إجمالي السيارات</div>
+                </div>
+                <div class="stat-card stat-green">
+                    <span class="stat-icon"><i class="bi bi-check-circle-fill"></i></span>
+                    <div class="stat-number" id="statActive">0</div>
+                    <div class="stat-label">نشطة</div>
+                </div>
+                <div class="stat-card stat-gold">
+                    <span class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></span>
+                    <div class="stat-number" id="statExpiringDocs">0</div>
+                    <div class="stat-label">مستندات قاربت على الانتهاء/منتهية</div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon"><i class="bi bi-p-square-fill"></i></span>
+                    <div class="stat-number" id="statParked">0</div>
+                    <div class="stat-label">مركونة</div>
+                </div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل السيارات. تأكد من تشغيل ملف admin_schema_step5.sql (وستيب السيارات الأساسي) في Supabase.</span>
+                <button onclick="loadVehiclesPage()">إعادة المحاولة</button>
+            </div>
+
+            <!-- ===== إضافة سيارة جديدة ===== -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة سيارة جديدة</h5>
+                </div>
+                <div style="padding: 16px;">
+                    <div class="vehicle-form-grid">
+                        <div class="form-field">
+                            <label for="newPlateNumber">رقم اللوحة</label>
+                            <input type="text" id="newPlateNumber" placeholder="مثال: أ ب ج 1234" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newCarType">نوع السيارة</label>
+                            <input type="text" id="newCarType" placeholder="مثال: تويوتا هايلوكس" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newBranch">الفرع</label>
+                            <select id="newBranch">
+                                <option value="">— بدون فرع —</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label for="newSequenceNumber">الرقم التسلسلي</label>
+                            <input type="text" id="newSequenceNumber" placeholder="اختياري" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newLicenseExpiry">انتهاء الاستمارة</label>
+                            <input type="date" id="newLicenseExpiry" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newInspectionExpiry">انتهاء الفحص</label>
+                            <input type="date" id="newInspectionExpiry" />
+                        </div>
+                        <div class="form-field">
+                            <label for="newInsuranceExpiry">انتهاء التأمين</label>
+                            <input type="date" id="newInsuranceExpiry" />
+                        </div>
+                        <button class="btn-action btn-primary" onclick="addVehicle()">
+                            <i class="bi bi-plus-lg"></i> إضافة
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== فلتر الفرع ===== -->
+            <div class="branch-filter-bar">
+                <label for="branchFilter"><i class="bi bi-signpost-split-fill"></i> فلترة بالفرع:</label>
+                <select id="branchFilter" onchange="renderVehiclesTable()">
+                    <option value="">كل الفروع</option>
+                </select>
+            </div>
+
+            <!-- ===== التبويبات ===== -->
+            <div class="tabs-bar">
+                <button class="tab-btn active" data-status="all" onclick="switchTab('all')">
+                    <i class="bi bi-car-front-fill"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
+                </button>
+                <button class="tab-btn tab-active_v" data-status="active_v" onclick="switchTab('active_v')">
+                    <i class="bi bi-check-circle-fill"></i> نشطة <span class="tab-count" id="tabCountActive">0</span>
+                </button>
+                <button class="tab-btn tab-parked" data-status="parked" onclick="switchTab('parked')">
+                    <i class="bi bi-p-square-fill"></i> مركونة <span class="tab-count" id="tabCountParked">0</span>
+                </button>
+                <button class="tab-btn tab-for_sale" data-status="for_sale" onclick="switchTab('for_sale')">
+                    <i class="bi bi-tag-fill"></i> معروضة للبيع <span class="tab-count" id="tabCountForSale">0</span>
+                </button>
+                <button class="tab-btn tab-retired" data-status="retired" onclick="switchTab('retired')">
+                    <i class="bi bi-x-octagon-fill"></i> منتهية/خارج الخدمة <span class="tab-count" id="tabCountRetired">0</span>
+                </button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title" id="activeTabTitle"><i class="bi bi-car-front-fill"></i> كل السيارات</h5>
+                    <span class="record-count" id="vehiclesCount">0 سيارة</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>#</th><th>رقم اللوحة</th><th>نوع السيارة</th><th>الفرع</th>
+                                <th>الرقم التسلسلي</th><th>الاستمارة</th><th>الفحص</th><th>التأمين</th>
+                                <th>الحالة</th><th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehiclesTableBody">
+                            <tr class="empty-state-row"><td colspan="10"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">QuickData — السيارات</span>
+            </div>
+            <div class="footer-left">
+                <span class="footer-version">موديول السيارات</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+
+    <script>
+        var vehiclesCache = [];
+        var branchesCache = [];
+        var currentTab = 'all';
+
+        // حد التنبيه بالأيام قبل انتهاء أي مستند (استمارة/فحص/تأمين) — قابل للتعديل من هنا فقط
+        var NOTIFY_EXPIRING_WITHIN_DAYS = 30;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var currentUser = initAdminPage({ onRefresh: loadVehiclesPage });
+            if (!currentUser) return;
+            loadVehiclesPage();
+        });
+
+        async function loadVehiclesPage() {
+            var errorBanner = document.getElementById('errorBanner');
+            errorBanner.classList.remove('show');
+            try {
+                await loadBranchesForSelect();
+                await loadVehicles();
+                await checkVehicleNotifications();
+                await loadNotificationsCount();
+            } catch (error) {
+                console.error('خطأ في تحميل صفحة السيارات:', error);
+                errorBanner.classList.add('show');
+            }
+        }
+
+        async function loadBranchesForSelect() {
+            try {
+                branchesCache = await Supabase.fetchData('admin_branches', { order: 'name' }) || [];
+                var sorted = branchesCache.slice().sort(function(a, b) { return (a.name || '').localeCompare(b.name || '', 'ar'); });
+                var optionsHtml = sorted.map(function(b) {
+                    return '<option value="' + b.id + '">' + escapeHtml(b.name) + '</option>';
+                }).join('');
+
+                var addSelect = document.getElementById('newBranch');
+                addSelect.innerHTML = '<option value="">— بدون فرع —</option>' + optionsHtml;
+
+                var filterSelect = document.getElementById('branchFilter');
+                filterSelect.innerHTML = '<option value="">كل الفروع</option>' + optionsHtml;
+            } catch (error) {
+                console.error('خطأ في تحميل الفروع:', error);
+            }
+        }
+
+        function branchName(id) {
+            if (!id) return '—';
+            var b = branchesCache.find(function(x) { return x.id === id; });
+            return b ? escapeHtml(b.name) : '—';
+        }
+
+        async function loadVehicles() {
+            var tbody = document.getElementById('vehiclesTableBody');
+            try {
+                vehiclesCache = await Supabase.fetchData('admin_vehicles', { order: 'created_at' }) || [];
+                updateStatsAndTabs();
+                renderVehiclesTable();
+            } catch (error) {
+                console.error('خطأ في تحميل السيارات:', error);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="10"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل السيارات. تأكد من تشغيل admin_schema_step5.sql</td></tr>';
+                throw error;
+            }
+        }
+
+        function daysUntil(dateStr) {
+            if (!dateStr) return null;
+            var target = new Date(dateStr + 'T00:00:00').getTime();
+            var now = new Date();
+            var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            return Math.floor((target - today) / (1000 * 60 * 60 * 24));
+        }
+
+        // أخطر حالة مستند بين الثلاثة (تستخدم لتلوين كارت "مستندات قاربت على الانتهاء")
+        function worstDocLevel(v) {
+            var dates = [v.license_expiry, v.inspection_expiry, v.insurance_expiry];
+            var level = null;
+            dates.forEach(function(d) {
+                if (!d) return;
+                var days = daysUntil(d);
+                if (days < 0) level = 'danger';
+                else if (days <= NOTIFY_EXPIRING_WITHIN_DAYS && level !== 'danger') level = 'warn';
+            });
+            return level;
+        }
+
+        function expiryTag(dateStr) {
+            var dateLabel = dateStr ? new Date(dateStr + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
+            if (!dateStr) return '<span>—</span>';
+            var days = daysUntil(dateStr);
+            var tag = '';
+            if (days < 0) tag = '<span class="expiry-tag danger">منتهي</span>';
+            else if (days <= NOTIFY_EXPIRING_WITHIN_DAYS) tag = '<span class="expiry-tag warn">باقي ' + days + ' يوم</span>';
+            return '<div class="expiry-cell"><span>' + dateLabel + '</span>' + tag + '</div>';
+        }
+
+        function statusLabel(status) {
+            var map = {
+                active_v: '<span class="status-badge status-active">نشطة</span>',
+                parked: '<span class="status-badge status-info">مركونة</span>',
+                for_sale: '<span class="status-badge status-pending">معروضة للبيع</span>',
+                retired: '<span class="status-badge status-cancelled">منتهية/خارج الخدمة</span>'
+            };
+            return map[status] || map.active_v;
+        }
+
+        function normalizedStatus(v) {
+            // القاعدة تخزن status='active' افتراضيًا؛ نعرضه كـ active_v في الواجهة
+            return v.status === 'active' ? 'active_v' : (v.status || 'active_v');
+        }
+
+        function updateStatsAndTabs() {
+            var byStatus = function(s) { return vehiclesCache.filter(function(v) { return normalizedStatus(v) === s; }); };
+            var withDocIssue = vehiclesCache.filter(function(v) { return worstDocLevel(v) !== null; });
+
+            document.getElementById('statTotal').textContent = vehiclesCache.length;
+            document.getElementById('statActive').textContent = byStatus('active_v').length;
+            document.getElementById('statExpiringDocs').textContent = withDocIssue.length;
+            document.getElementById('statParked').textContent = byStatus('parked').length;
+
+            document.getElementById('tabCountAll').textContent = vehiclesCache.length;
+            document.getElementById('tabCountActive').textContent = byStatus('active_v').length;
+            document.getElementById('tabCountParked').textContent = byStatus('parked').length;
+            document.getElementById('tabCountForSale').textContent = byStatus('for_sale').length;
+            document.getElementById('tabCountRetired').textContent = byStatus('retired').length;
+        }
+
+        function switchTab(status) {
+            currentTab = status;
+            document.querySelectorAll('.tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-status') === status);
+            });
+            var titles = {
+                all: '<i class="bi bi-car-front-fill"></i> كل السيارات',
+                active_v: '<i class="bi bi-check-circle-fill"></i> سيارات نشطة',
+                parked: '<i class="bi bi-p-square-fill"></i> سيارات مركونة',
+                for_sale: '<i class="bi bi-tag-fill"></i> سيارات معروضة للبيع',
+                retired: '<i class="bi bi-x-octagon-fill"></i> سيارات منتهية/خارج الخدمة'
+            };
+            document.getElementById('activeTabTitle').innerHTML = titles[status];
+            renderVehiclesTable();
+        }
+
+        function renderVehiclesTable() {
+            var tbody = document.getElementById('vehiclesTableBody');
+            var branchFilter = document.getElementById('branchFilter').value;
+
+            var filtered = vehiclesCache.filter(function(v) {
+                var matchesTab = currentTab === 'all' || normalizedStatus(v) === currentTab;
+                var matchesBranch = !branchFilter || v.branch_id === branchFilter;
+                return matchesTab && matchesBranch;
+            });
+
+            document.getElementById('vehiclesCount').textContent = filtered.length + ' سيارة';
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="10"><i class="bi bi-inbox"></i>لا توجد سيارات في هذه القائمة بعد</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(function(v, index) {
+                return (
+                    '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + escapeHtml(v.plate_number) + '</td>' +
+                        '<td>' + escapeHtml(v.car_type) + '</td>' +
+                        '<td>' + branchName(v.branch_id) + '</td>' +
+                        '<td>' + escapeHtml(v.sequence_number || '—') + '</td>' +
+                        '<td>' + expiryTag(v.license_expiry) + '</td>' +
+                        '<td>' + expiryTag(v.inspection_expiry) + '</td>' +
+                        '<td>' + expiryTag(v.insurance_expiry) + '</td>' +
+                        '<td>' +
+                            '<select class="status-select" onchange="changeVehicleStatus(\'' + v.id + '\', this.value)">' +
+                                '<option value="active_v"' + (normalizedStatus(v) === 'active_v' ? ' selected' : '') + '>نشطة</option>' +
+                                '<option value="parked"' + (normalizedStatus(v) === 'parked' ? ' selected' : '') + '>مركونة</option>' +
+                                '<option value="for_sale"' + (normalizedStatus(v) === 'for_sale' ? ' selected' : '') + '>معروضة للبيع</option>' +
+                                '<option value="retired"' + (normalizedStatus(v) === 'retired' ? ' selected' : '') + '>منتهية/خارج الخدمة</option>' +
+                            '</select>' +
+                        '</td>' +
+                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteVehicle(\'' + v.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                    '</tr>'
+                );
+            }).join('');
+        }
+
+        async function addVehicle() {
+            var plateNumber = document.getElementById('newPlateNumber').value.trim();
+            var carType = document.getElementById('newCarType').value.trim();
+            var branchId = document.getElementById('newBranch').value || null;
+            var sequenceNumber = document.getElementById('newSequenceNumber').value.trim() || null;
+            var licenseExpiry = document.getElementById('newLicenseExpiry').value || null;
+            var inspectionExpiry = document.getElementById('newInspectionExpiry').value || null;
+            var insuranceExpiry = document.getElementById('newInsuranceExpiry').value || null;
+
+            if (!plateNumber || !carType) {
+                showToast('اكتب رقم اللوحة ونوع السيارة أولاً', 'warning');
+                return;
+            }
+            try {
+                await Supabase.addData('admin_vehicles', {
+                    plate_number: plateNumber,
+                    car_type: carType,
+                    branch_id: branchId,
+                    sequence_number: sequenceNumber,
+                    license_expiry: licenseExpiry,
+                    inspection_expiry: inspectionExpiry,
+                    insurance_expiry: insuranceExpiry
+                });
+                document.getElementById('newPlateNumber').value = '';
+                document.getElementById('newCarType').value = '';
+                document.getElementById('newBranch').value = '';
+                document.getElementById('newSequenceNumber').value = '';
+                document.getElementById('newLicenseExpiry').value = '';
+                document.getElementById('newInspectionExpiry').value = '';
+                document.getElementById('newInsuranceExpiry').value = '';
+                showToast('تمت إضافة السيارة بنجاح', 'success');
+                await loadVehicles();
+                await checkVehicleNotifications();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل إضافة السيارة', 'error');
+            }
+        }
+
+        async function changeVehicleStatus(id, newStatus) {
+            try {
+                var dbStatus = newStatus === 'active_v' ? 'active' : newStatus;
+                await Supabase.updateData('admin_vehicles', id, { status: dbStatus, updated_at: new Date().toISOString() });
+                await loadVehicles();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل تحديث حالة السيارة', 'error');
+            }
+        }
+
+        async function deleteVehicle(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه السيارة؟')) return;
+            try {
+                await Supabase.deleteData('admin_vehicles', id);
+                showToast('تم حذف السيارة', 'success');
+                await loadVehicles();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حذف السيارة', 'error');
+            }
+        }
+
+        // ================================================================
+        // فحص انتهاء/اقتراب انتهاء الاستمارة والفحص والتأمين لكل سيارة
+        // وتسجيل إشعار مرة واحدة فقط لكل (سيارة + مستند + درجة) — بيتفحص
+        // الإشعارات الموجودة فعلاً قبل ما يضيف جديد
+        // ================================================================
+        async function checkVehicleNotifications() {
+            try {
+                var existingNotifs = await Supabase.fetchData('admin_notifications', { filter: { module: 'vehicles' } });
+                var existingKeys = (existingNotifs || []).map(function(n) { return n.ref_id + '|' + n.level + '|' + n.message; });
+
+                var docs = [
+                    { field: 'license_expiry', label: 'الاستمارة' },
+                    { field: 'inspection_expiry', label: 'الفحص' },
+                    { field: 'insurance_expiry', label: 'التأمين' }
+                ];
+
+                for (var i = 0; i < vehiclesCache.length; i++) {
+                    var v = vehiclesCache[i];
+                    for (var j = 0; j < docs.length; j++) {
+                        var doc = docs[j];
+                        var dateVal = v[doc.field];
+                        if (!dateVal) continue;
+                        var d = daysUntil(dateVal);
+                        var vehicleLabel = v.plate_number + ' (' + (v.car_type || '') + ')';
+
+                        if (d < 0) {
+                            var msgDanger = 'انتهى ' + doc.label + ' منذ ' + Math.abs(d) + ' يوم';
+                            if (existingKeys.indexOf(v.id + '|danger|' + msgDanger) === -1) {
+                                await Supabase.addData('admin_notifications', {
+                                    module: 'vehicles',
+                                    title: doc.label + ' منتهي: ' + vehicleLabel,
+                                    message: msgDanger,
+                                    level: 'danger',
+                                    ref_table: 'admin_vehicles',
+                                    ref_id: v.id
+                                });
+                            }
+                        } else if (d <= NOTIFY_EXPIRING_WITHIN_DAYS) {
+                            var msgWarn = 'باقي ' + d + ' يوم على انتهاء ' + doc.label;
+                            if (existingKeys.indexOf(v.id + '|warning|' + msgWarn) === -1) {
+                                await Supabase.addData('admin_notifications', {
+                                    module: 'vehicles',
+                                    title: doc.label + ' قارب على الانتهاء: ' + vehicleLabel,
+                                    message: msgWarn,
+                                    level: 'warning',
+                                    ref_table: 'admin_vehicles',
+                                    ref_id: v.id
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('خطأ في فحص إشعارات السيارات:', error);
+            }
+        }
+
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                var count = (unread || []).length;
+                document.getElementById('notifDot').classList.toggle('show', count > 0);
+            } catch (error) {
+                console.error('خطأ في تحميل الإشعارات:', error);
+            }
+        }
+
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var notifs = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!notifs || !notifs.length) {
+                    showToast('لا توجد إشعارات حاليًا', 'info');
+                    return;
+                }
+                var latest = notifs[0];
+                showToast('🔔 ' + latest.title, latest.level === 'danger' ? 'error' : (latest.level === 'warning' ? 'warning' : 'info'));
+            } catch (error) {
+                console.error(error);
+            }
+        });
+
+        function notifySoon(moduleName) {
+            showToast('📦 موديول "' + moduleName + '" هيتم بناؤه في إحدى الخطوات القادمة', 'info');
+        }
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>

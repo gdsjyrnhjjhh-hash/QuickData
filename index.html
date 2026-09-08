@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%93%8B%3C/text%3E%3C/svg%3E" />
-    <title id="pageTitle">اللوحة الإدارية - حراء للسياحة</title>
+    <title id="pageTitle">اللوحة الإدارية - QuickData</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,7 +47,7 @@
                 <div class="brand-mark">إد</div>
                 <div class="brand-text">
                     اللوحة <span>الإدارية</span>
-                    <small>حراء للسياحة</small>
+                    <small>QuickData</small>
                 </div>
             </div>
         </div>
@@ -61,7 +61,7 @@
             <div class="nav-section-title">الموديولات الإدارية</div>
             <ul class="nav-list">
                 <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال <span class="sidebar-badge">جديد</span></a></li>
-                <li><a href="#" onclick="notifySoon('السيارات'); return false;"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
+                <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="#" onclick="notifySoon('المشتريات'); return false;"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge badge-soon">قريبًا</span></a></li>
                 <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="contracts.html"><i class="bi bi-file-earmark-text-fill"></i> العقود <span class="sidebar-badge">جديد</span></a></li>
@@ -107,7 +107,7 @@
                 <div class="user-profile">
                     <div class="user-info">
                         <span class="user-name" id="userName">مدير النظام</span>
-                        <span class="user-role" id="userRole">حراء للسياحة</span>
+                        <span class="user-role" id="userRole">QuickData</span>
                     </div>
                     <div class="user-avatar" id="userAvatar">م</div>
                 </div>
@@ -147,8 +147,8 @@
                 </div>
                 <div class="stat-card">
                     <span class="stat-icon"><i class="bi bi-car-front-fill"></i></span>
-                    <div class="stat-number">—</div>
-                    <div class="stat-label">السيارات (قريبًا)</div>
+                    <div class="stat-number" id="statVehicles">0</div>
+                    <div class="stat-label">سيارات نشطة</div>
                 </div>
             </div>
 
@@ -158,8 +158,7 @@
                     <i class="bi bi-kanban-fill"></i>
                     <div><strong>تنسيق الأعمال</strong><span>المهام والتنبيهات</span></div>
                 </a>
-                <a href="#" class="quick-action" onclick="notifySoon('السيارات'); return false;">
-                    <span class="soon-tag">قريبًا</span>
+                <a href="vehicles.html" class="quick-action">
                     <i class="bi bi-car-front-fill"></i>
                     <div><strong>السيارات</strong><span>الأسطول وحالته</span></div>
                 </a>
@@ -226,7 +225,7 @@
             <div class="footer-right">
                 <span class="footer-brand">اللوحة <span>الإدارية</span></span>
                 <span class="footer-divider">|</span>
-                <span class="footer-copy">حراء للسياحة — تنسيق الأعمال الداخلية</span>
+                <span class="footer-copy">QuickData — تنسيق الأعمال الداخلية</span>
             </div>
             <div class="footer-left">
                 <span class="footer-version">الخطوة 1 من 8</span>
@@ -255,7 +254,7 @@
             var errorBanner = document.getElementById('errorBanner');
             errorBanner.classList.remove('show');
             try {
-                await Promise.all([loadBranches(), loadNotificationsCount(), loadTasksCount()]);
+                await Promise.all([loadBranches(), loadNotificationsCount(), loadTasksCount(), loadVehiclesCount()]);
             } catch (error) {
                 console.error('خطأ في تحميل بيانات اللوحة:', error);
                 errorBanner.classList.add('show');
@@ -410,6 +409,16 @@
             } catch (error) {
                 console.error('خطأ في تحميل عدد المهام:', error);
                 document.getElementById('statTasks').textContent = '0';
+            }
+        }
+
+        async function loadVehiclesCount() {
+            try {
+                var active = await Supabase.fetchData('admin_vehicles', { filter: { status: 'active' } });
+                document.getElementById('statVehicles').textContent = (active || []).length;
+            } catch (error) {
+                console.error('خطأ في تحميل عدد السيارات:', error);
+                document.getElementById('statVehicles').textContent = '0';
             }
         }
 

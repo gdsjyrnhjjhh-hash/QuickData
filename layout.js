@@ -1,7 +1,6 @@
 /* ================================================================
-   اللوحة الإدارية — حراء للسياحة
+   اللوحة الإدارية — QuickData
    سلوكيات مشتركة لكل صفحات اللوحة (Layout Helpers)
-   مستخرجة من نفس منطق index.html الأصلي في نظام حراء للسياحة
    يعتمد على وجود supabase.js قبله في الصفحة
    ================================================================ */
 
@@ -51,7 +50,7 @@ function initSidebar() {
 
 // ================================================================
 // الوضع الليلي (يعتمد على Supabase.isDarkModeEnabled / applyTheme / toggleTheme
-// الموجودة أصلاً في supabase.js المشترك مع نظام حراء للسياحة)
+// الموجودة في supabase.js)
 // ================================================================
 function initDarkMode() {
     var toggle = document.getElementById('darkModeToggle');
@@ -126,7 +125,7 @@ function updateUserUI(currentUser) {
     var fullName = (currentUser.user_metadata && currentUser.user_metadata.full_name) || currentUser.email || 'مستخدم';
 
     if (userName) userName.textContent = fullName;
-    if (userRole) userRole.textContent = (currentUser.user_metadata && currentUser.user_metadata.role) || 'حراء للسياحة';
+    if (userRole) userRole.textContent = (currentUser.user_metadata && currentUser.user_metadata.role) || 'QuickData';
     if (userAvatar) userAvatar.textContent = fullName.charAt(0).toUpperCase();
 }
 

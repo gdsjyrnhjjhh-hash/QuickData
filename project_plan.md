@@ -1,61 +1,125 @@
-# خطة تطوير اللوحة الإدارية — hraa-admin-dashboard
+# خطة تطوير اللوحة الإدارية — QuickData
 
-> **ملف توثيق حي** — أي محادثة جديدة يجب أن تقرأ هذا الملف أولاً.
-> ⚠️ **المشروع الحقيقي والمعتمد هو الموجود في مستودع `QuickData-main`** (theme.css, layout.js, supabase.js, login.html, index.html, tasks.html، وملفات admin_schema_stepN.sql). أي عمل سابق في هذه المحادثة استخدم أسماء جداول مختلفة (`tasks`, `cars`, `suppliers`...) — **تم حذفه بالكامل من القاعدة في 2026-09-08** لأنه كان مكررًا وفارغًا ويسبب لبس. لا تُنشئ هذه الأسماء مرة أخرى.
+> **ملف توثيق حي** — أي محادثة جديدة (أو مساعد ذكاء اصطناعي جديد) يجب أن تقرأ هذا الملف أولاً قبل أي تعديل.
+> المشروع الحقيقي والمعتمد هو نفس الملفات المرفقة هنا: theme.css, layout.js, supabase.js, login.html,
+> index.html, tasks.html, ideas.html, contracts.html, vehicles.html, وملفات admin_schema_stepN.sql.
+
+## 0. تحديث 2026-09-08 (أ) — تصحيح مهم بخصوص "حراء للسياحة" (مُنفَّذ بالكامل)
+
+كان فيه خطأ متكرر في نسخة سابقة من الملفات: عبارات وتعليقات بتقول إن تسجيل الدخول ومشروع Supabase
+بتوع QuickData **مشتركين** مع نظام "حراء للسياحة" المحاسبي. **العميل صحّح الأمر صراحةً: ده غير صحيح.**
+QuickData مشروع Supabase مستقل تمامًا (QuickData ProSoft V.1, project_id: hecsuitrqtbzgbbjjtbf)،
+وله مستخدموه الخاصون، ومفيش أي مشاركة بيانات دخول مع أي نظام آخر.
+
+تم تنظيف كل الإشارات الخاطئة دي من 6 ملفات (login.html — بما فيها **نص كان ظاهر فعليًا للمستخدم**
+في صفحة الدخول —, layout.js, theme.css, supabase.js, admin_schema_step1.sql, STEP1_README.md).
+تم التأكد بـ grep شامل على كل ملفات الكود: **لا توجد أي إشارة متبقية**.
+
+**أي محادثة جديدة: لو شفت أي إشارة لـ"حراء" في أي ملف تاني من المشروع، امسحها فورًا.**
+
+## 0. تحديث 2026-09-08 (ب) — موديول السيارات مكتمل الآن (واجهة + قاعدة)
+
+- أُضيف عمود `insurance_expiry` لجدول `admin_vehicles` (كان ناقصًا رغم طلب العميل الصريح له في
+  التسجيل الصوتي) — موثّق في `admin_schema_step5.sql` ومُنفَّذ فعليًا على القاعدة.
+- **`vehicles.html`** صفحة جديدة كاملة على نفس نمط `contracts.html`:
+  - فورم إضافة سيارة (رقم اللوحة، النوع، الفرع، الرقم التسلسلي، 3 تواريخ انتهاء).
+  - 5 تبويبات: الكل / نشطة / مركونة / معروضة للبيع / منتهية-خارج الخدمة — تغطي كل الحالات
+    المطلوبة في التسجيل الصوتي ("مركونة"، "بيتم بيعها"، "انتهت").
+  - **فلتر بالفرع** فوق الجدول — يحقق طلب العميل "فصل كل فرع لوحده" من غير الحاجة لصفحة منفصلة لكل فرع.
+  - تنبيهات تلقائية (client-side، بنفس منطق tasks/contracts) لكل واحد من الثلاثة مستقلًا: الاستمارة،
+    الفحص، **التأمين** — تُسجَّل في `admin_notifications` بفارق 30 يوم قبل الانتهاء + عند الانتهاء الفعلي.
+  - حالة كل سيارة قابلة للتغيير مباشرة من الجدول (select) زي عمود الحالة في tasks.html.
+- تم ربط رابط "السيارات" فعليًا (بدل "قريبًا") في السايدبار وكارت الاختصار في **كل** الصفحات:
+  index.html, tasks.html, ideas.html, contracts.html, vehicles.html نفسها.
+- `index.html`: كارت الإحصائيات بيعرض دلوقتي **عدد السيارات النشطة فعليًا** بدل "— (قريبًا)".
 
 ## 1. معلومات المشروع (Supabase)
 - اسم المشروع: **QuickData ProSoft V.1**
-- project_id: `hecsuitrqtbzgbbjjtbf`
-- Project URL: `https://hecsuitrqtbzgbbjjtbf.supabase.co`
-- متصل مباشرة عبر Supabase MCP Connector — التنفيذ يتم مباشرة على القاعدة الفعلية.
-- **كل الجداول ببادئة `admin_` وعمود `id` من نوع `uuid`** — هذا هو التوافق المطلوب لأي جدول جديد.
+- project_id: hecsuitrqtbzgbbjjtbf
+- Project URL: https://hecsuitrqtbzgbbjjtbf.supabase.co
+- **مشروع مستقل تمامًا** — لا يشارك أي باك إند أو بيانات دخول مع أي نظام آخر.
+- يُدار عبر **Supabase MCP Connector** — التنفيذ يتم مباشرة على القاعدة الفعلية (لازم توصيل
+  الـ connector أولًا في أي محادثة جديدة قبل تنفيذ أي SQL).
+- **كل الجداول ببادئة admin_ وعمود id من نوع uuid** — هذا هو التوافق المطلوب لأي جدول جديد.
 
 ## 2. مصدر المتطلبات
-تفريغ صوتي من الأستاذ محمد يصف 7 موديولات: المهام، السيارات، المشتريات (+موردين+عروض أسعار)، تطوير الأفكار، استلام/تسليم الأعمال، إدارات أخرى (تواصل بين الأقسام)، العقود.
+تفريغ صوتي من الأستاذ محمد يصف 7 موديولات: المهام، السيارات، المشتريات (+موردين+عروض أسعار)،
+تطوير الأفكار، استلام/تسليم الأعمال، إدارات أخرى (تواصل بين الأقسام)، العقود.
 
-## 3. حالة الموديولات الفعلية في القاعدة (مؤكَّدة بالفحص المباشر بتاريخ 2026-09-08)
+**⚠️ التسجيل الصوتي غير مكتمل** — ينقطع فجأة عند وصف "sheet رقم اتنين" في موديول تطوير الأفكار.
+**لسه مفيش إجابة من العميل** هل فيه شيت تاني مطلوب في الموديول ده ولا لأ.
 
-| الموديول | الجدول | الحالة |
-|---|---|---|
-| الأساس (فروع + إشعارات مركزية) | `admin_branches`, `admin_notifications` | ✅ موجود |
-| المهام (تنسيق الأعمال) | `admin_tasks` | ✅ موجود |
-| السيارات | `admin_vehicles` | ✅ موجود |
-| المشتريات | `admin_purchases`, `admin_suppliers`, `admin_price_offers` | ✅ موجود |
-| استلام/تسليم الأعمال | `admin_handovers` | ✅ موجود |
-| إدارات أخرى (تواصل) | `admin_correspondence` | ✅ موجود |
-| **تطوير الأعمال والأفكار** | `admin_ideas` | ✅ موجود (بُني 2026-09-08) — صفحة `ideas.html` شغّالة |
-| **العقود** | `admin_contracts` | ✅ موجود (بُني 2026-09-08) — صفحة `contracts.html` شغّالة |
+## 3. حالة الموديولات (مؤكَّدة بالفحص المباشر عبر Supabase MCP، آخر تحديث 2026-09-08)
 
-**كل الـ 7 موديولات الأصلية اللي في التسجيل الصوتي بقى ليها جدول في القاعدة. الموديولات اللي معندهاش واجهة (صفحة .html) لسه: السيارات، المشتريات، استلام/تسليم الأعمال، إدارات أخرى (تواصل) — جداولها موجودة بس مفيش صفحة فعلية بتستخدمها غير tasks/ideas/contracts/index.**
+| الموديول | الجدول | الحالة | واجهة (.html)؟ |
+|---|---|---|---|
+| الأساس (فروع + إشعارات مركزية) | admin_branches, admin_notifications | ✅ | index.html |
+| المهام (تنسيق الأعمال) | admin_tasks | ✅ | ✅ tasks.html |
+| **السيارات** | admin_vehicles (+insurance_expiry) | ✅ | ✅ **vehicles.html (جديد)** |
+| المشتريات | admin_purchases, admin_suppliers, admin_price_offers | ✅ | ❌ لسه "قريبًا" |
+| استلام/تسليم الأعمال | admin_handovers | ✅ | ❌ مفيش صفحة |
+| إدارات أخرى (تواصل) | admin_correspondence | ✅ | ❌ مفيش صفحة |
+| تطوير الأعمال والأفكار | admin_ideas | ✅ | ✅ ideas.html (⚠️ راجع قسم 2) |
+| العقود | admin_contracts | ✅ | ✅ contracts.html |
 
-## 4. تفاصيل بنية الجداول الموجودة (كما هي فعليًا في القاعدة)
-- `admin_branches(id uuid, name, is_active, created_at)`
-- `admin_notifications(id uuid, module, title, message, level, ref_table, ref_id, is_read, created_at)` — **جدول إشعارات مركزي واحد لكل الموديولات**، مش جدول منفصل لكل موديول.
-- `admin_tasks(id uuid, title, coordinated_with, priority[critical/important/deferrable], status[pending/deferred/done/transferred], notes, created_at, updated_at)`
-- `admin_vehicles(id uuid, plate_number, car_type, branch_id uuid→admin_branches, sequence_number, license_expiry, inspection_expiry, status, notes, created_at, updated_at)`
-- `admin_suppliers(id uuid, supplier_code bigint, name, activity, mobile, registration_date, created_at)`
-- `admin_purchases(id uuid, purchase_date, purchase_type, supplier_id uuid→admin_suppliers, branch_id uuid→admin_branches, item_description, cost numeric, attachment_url, notes, created_at)`
-- `admin_price_offers(id uuid, offer_name, offer_date, entity_name, status, notes, created_at)`
-- `admin_handovers(id uuid, employee_name, direction, has_mobile, has_car, has_email, has_engineering, other_items, branch_id uuid→admin_branches, handover_date, signed, notes, created_at)`
-- `admin_correspondence(id uuid, subject, department, correspondence_date, status, notes, created_at)`
-- `admin_ideas(id uuid, title, department, status[new/under_review/approved/rejected/implemented], notes, created_at, updated_at)` — **جديد 2026-09-08**
-- `admin_contracts(id uuid, contract_type, owner_name, branch_id uuid→admin_branches, contract_date, expiry_date, notes, created_at, updated_at)` — **جديد 2026-09-08**. عمود `expiry_date` مضاف زيادة عن التوصيف الأصلي في الخطة (كان contract_type/owner_name/branch_id/contract_date/notes بس) عشان تُحسب حالة العقد (سارٍ/قارب على الانتهاء/منتهي) وتُبعت تنبيهات مركزية بنفس منطق باقي الموديولات.
+**4 من 7 موديولات ليها واجهة شغّالة الآن: تنسيق الأعمال، السيارات، تطوير الأفكار، العقود.**
+الباقي (المشتريات، استلام/تسليم الأعمال، التواصل بين الإدارات) لسه من غير واجهة.
 
-## 5. ملفات المشروع الحقيقي (من QuickData-main.zip المرفوع، ومحدَّثة بتاريخ 2026-09-08)
-`theme.css` (تصميم موحّد: سايدبار، وضع ليلي، جداول، مودالز، توست)، `layout.js` (سلوكيات مشتركة + `initAdminPage()`)، `supabase.js` (طبقة اتصال عامة: fetchData/addData/updateData/deleteData)، `login.html`, `index.html` (سايدبار + كروت إحصائية + إدارة الفروع)، `tasks.html`، `admin_schema_step1.sql`, `admin_schema_step2.sql`، `admin_schema_step3.sql` (admin_ideas)، `ideas.html`، وأضيف حديثًا: `admin_schema_step4.sql` (SQL توثيقي لجدول admin_contracts) و`contracts.html` (صفحة العقود الفعلية الشغالة — تبويبات: الكل/سارية/قاربت على الانتهاء/منتهية، مع تنبيهات تلقائية في admin_notifications قبل 30 يوم من الانتهاء).
-تم تحديث `index.html`, `tasks.html`, `ideas.html`: رابط "العقود" في السايدبار (وكارت الاختصار السريع في index.html) بقى يودّي فعليًا لـ `contracts.html` بدل "قريبًا".
-**كل صفحة جديدة يجب أن تتبع نفس النمط**: تربط `theme.css` بسطر واحد، تستدعي `initAdminPage()` من `layout.js`، وتستخدم دوال `supabase.js` العامة بدل عمل Supabase client مستقل.
+## 4. تفاصيل بنية الجداول (كما هي فعليًا في القاعدة)
+- admin_branches(id uuid, name, is_active, created_at)
+- admin_notifications(id uuid, module, title, message, level, ref_table, ref_id, is_read, created_at)
+- admin_tasks(id uuid, title, coordinated_with, priority[critical/important/deferrable],
+  status[pending/deferred/done/transferred], notes, created_at, updated_at)
+- admin_vehicles(id uuid, plate_number, car_type, branch_id→admin_branches, sequence_number,
+  license_expiry, inspection_expiry, insurance_expiry [مضاف 2026-09-08], status[active/parked/
+  for_sale/retired — الواجهة تعرضها بأسماء عربية، القاعدة تخزن 'active' افتراضيًا], notes,
+  created_at, updated_at)
+- admin_suppliers(id uuid, supplier_code bigint [تسلسلي تلقائي], name, activity, mobile,
+  registration_date, created_at)
+- admin_purchases(id uuid, purchase_date, purchase_type, supplier_id→admin_suppliers,
+  branch_id→admin_branches, item_description, cost numeric, attachment_url, notes, created_at)
+- admin_price_offers(id uuid, offer_name, offer_date, entity_name, status, notes, created_at)
+- admin_handovers(id uuid, employee_name, direction, has_mobile, has_car, has_email,
+  has_engineering, other_items, branch_id→admin_branches, handover_date, signed, notes, created_at)
+- admin_correspondence(id uuid, subject, department, correspondence_date, status, notes, created_at)
+- admin_ideas(id uuid, title, department, status[new/under_review/approved/rejected/implemented],
+  notes, created_at, updated_at)
+- admin_contracts(id uuid, contract_type, owner_name, branch_id→admin_branches, contract_date,
+  expiry_date [إضافة زيادة عن التوصيف الأصلي], notes, created_at, updated_at)
 
-## 6. حالة المشروع الحالية
-كل الـ 7 موديولات من التسجيل الصوتي بقى ليها جدول في القاعدة، و**3 موديولات ليها واجهة فعلية شغّالة**: تنسيق الأعمال (`tasks.html`)، تطوير الأفكار (`ideas.html`)، العقود (`contracts.html`) — بالإضافة لـ `index.html` (الأساس + إدارة الفروع).
+## 5. منطق التنبيهات المتدرجة (تنفيذ فعلي مؤكَّد من الكود، client-side في كل الحالات)
+- **المهام** (tasks.html): NOTIFY_UNFINISHED_AFTER_DAYS=2, NOTIFY_OVERDUE_AFTER_DAYS=7.
+- **العقود** (contracts.html): تنبيه قبل 30 يوم من expiry_date.
+- **السيارات** (vehicles.html): تنبيه قبل 30 يوم لكل من license_expiry/inspection_expiry/
+  insurance_expiry مستقلًا عن بعض، + تنبيه "منتهي" عند تجاوز التاريخ.
+- كل ده client-side (يُفحص عند فتح الصفحة)، **مش cron على السيرفر** — pg_cron extension متاحة
+  في المشروع بس غير مُفعّلة.
 
-الموديولات اللي جداولها موجودة بس **من غير واجهة (.html) بعد**:
-- السيارات (`admin_vehicles`)
-- المشتريات (`admin_purchases`, `admin_suppliers`, `admin_price_offers`)
-- استلام/تسليم الأعمال (`admin_handovers`)
-- إدارات أخرى / تواصل بين الأقسام (`admin_correspondence`)
+## 6. ملفات المشروع (2026-09-08)
+theme.css, layout.js, supabase.js, login.html, index.html, tasks.html, ideas.html,
+contracts.html, **vehicles.html (جديد)**, admin_schema_step1.sql (فروع+إشعارات),
+admin_schema_step2.sql (مهام), admin_schema_step3.sql (أفكار، توثيقي),
+admin_schema_step4.sql (عقود، توثيقي), admin_schema_step5.sql (تصحيح عمود تأمين السيارات، توثيقي),
+STEP1_README.md, STEP2_README.md.
 
-**بانتظار توجيه المستخدم: أي موديول من الأربعة اللي فوق يتبنى له واجهة الأول، أو أولوية أخرى (تحسين صفحة موجودة، ربط الإشعارات المركزية بشكل أوضح في الواجهة، إلخ).**
+**كل صفحة جديدة يجب أن تتبع نفس النمط**: تربط theme.css بسطر واحد، تستدعي initAdminPage() من
+layout.js، وتستخدم دوال supabase.js العامة بدل عمل Supabase client مستقل.
 
-## 7. تنبيه تاريخي (لتفادي تكرار الخطأ)
-في مرحلة سابقة من هذه المحادثة، تم بناء مجموعة جداول موازية بأسماء مختلفة (`tasks`, `task_notifications`, `cars`, `car_notifications`, `suppliers`, `purchases`, `price_quotes`, `business_ideas`, `handover_forms`, `interdepartmental_items`, `contracts`) ودوال (`set_updated_at`, `check_overdue_tasks`, `check_car_expirations`) وview (`all_notifications`) — **كل هذا تم حذفه بالكامل** بعد اكتشاف وجود المشروع الحقيقي `admin_*`. كانت فارغة تمامًا (صفر صفوف) وقت الحذف. لا داعي لإعادة إنشائها.
+## 7. سجل التصحيحات والإضافات — 2026-09-08
+1. إصلاح إشارات "حراء للسياحة" في 6 ملفات (قسم 0-أ).
+2. إضافة عمود insurance_expiry لجدول admin_vehicles (قسم 0-ب).
+3. بناء موديول السيارات كاملًا (واجهة vehicles.html + ربط الروابط في كل الصفحات + كارت الإحصائيات
+   في index.html) (قسم 0-ب).
+
+## 8. الأولويات المفتوحة (بانتظار توجيه العميل/المستخدم)
+1. أي الموديولات الثلاثة الباقية (المشتريات، استلام/تسليم الأعمال، التواصل بين الإدارات) يُبنى له
+   واجهة الأول؟
+2. الرجوع للعميل لتأكيد وجود/عدم وجود "شيت تاني" في موديول تطوير الأفكار (التسجيل الصوتي غير مكتمل).
+3. تفعيل pg_cron لو العميل عايز فحص تنبيهات دوري تلقائي من السيرفر بدل الاعتماد على فتح الصفحة.
+4. طباعة تقرير مفصّل للإدارة في موديول المشتريات (مطلوب صراحة في التسجيل الصوتي).
+
+## 9. تنبيه تاريخي (لتفادي تكرار الخطأ)
+في مرحلة سابقة، تم بناء مجموعة جداول موازية بأسماء مختلفة (tasks, task_notifications, cars,
+car_notifications, suppliers, purchases, price_quotes, business_ideas, handover_forms,
+interdepartmental_items, contracts) — **تم حذفها بالكامل** لأنها كانت مكررة وفارغة. لا داعي
+لإعادة إنشائها. الجداول الصحيحة الوحيدة هي كل ما ببادئة admin_.
