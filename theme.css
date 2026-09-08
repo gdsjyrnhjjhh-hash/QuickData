@@ -41,6 +41,16 @@
     --header-height: 60px;
     --font-display: 'Inter', 'Cairo', sans-serif;
     --font-body: 'Cairo', 'Inter', sans-serif;
+
+    /* ألوان زاهية للنصوص داخل صفحات المحتوى (بدون الشريط الجانبي) */
+    --vivid-1: #e63946;
+    --vivid-2: #d84315;
+    --vivid-3: #2e7d32;
+    --vivid-4: #00838f;
+    --vivid-5: #1565c0;
+    --vivid-6: #6a1b9a;
+    --vivid-7: #ad1457;
+    --vivid-8: #ef6c00;
 }
 
 /* ================================================================
@@ -526,3 +536,74 @@ body.dark-mode .footer-custom .footer-copy strong { color: var(--accent-light); 
 body.dark-mode .footer-custom .footer-version { background: var(--primary-light); color: rgba(232,228,220,0.5); }
 body.dark-mode .footer-custom .footer-link { color: rgba(232,228,220,0.5); }
 body.dark-mode .footer-custom .footer-link:hover { color: var(--accent-light); }
+
+/* ================================================================
+   طلب مخصص: نصوص بولد وبألوان زاهية داخل المحتوى الرئيسي
+   (يستثني الشريط الجانبي .sidebar تماماً)
+   ================================================================ */
+.main-content,
+.main-content * {
+    font-weight: 700 !important;
+}
+
+.main-content h1,
+.main-content h2,
+.main-content h3 {
+    color: var(--vivid-5) !important;
+}
+.main-content h4,
+.main-content h5,
+.main-content h6 {
+    color: var(--vivid-4) !important;
+}
+.main-content p {
+    color: var(--vivid-7) !important;
+}
+.main-content td {
+    color: var(--vivid-4) !important;
+}
+.main-content th {
+    color: var(--vivid-1) !important;
+}
+.main-content label,
+.main-content .form-label {
+    color: var(--vivid-8) !important;
+}
+.main-content li:not(.nav-list li) {
+    color: var(--vivid-6) !important;
+}
+.main-content strong {
+    color: var(--vivid-1) !important;
+}
+.main-content small {
+    color: var(--vivid-2) !important;
+}
+.main-content .stat-number {
+    color: var(--vivid-1) !important;
+}
+.main-content .stat-label {
+    color: var(--vivid-7) !important;
+}
+.main-content span:not(.badge):not(.badge-admin):not(.badge-finance):not(.badge-user):not(.notification-dot):not(.soon-tag):not(.footer-version):not(.footer-divider):not(.stat-icon):not(.user-avatar) {
+    color: var(--vivid-2) !important;
+}
+
+/* استثناء الشارات والأزرار والأيقونات من تغيير اللون (تبقى بألوانها الدلالية) مع الحفاظ على الخط البارز */
+.main-content .badge,
+.main-content .badge-admin,
+.main-content .badge-finance,
+.main-content .badge-user,
+.main-content .btn,
+.main-content .btn-primary,
+.main-content .btn-outline,
+.main-content .btn-success,
+.main-content .btn-danger,
+.main-content .nav-btn,
+.main-content .stat-icon,
+.main-content i,
+.main-content .error-banner,
+.main-content .toast-notification {
+    color: inherit;
+}
+.main-content .error-banner { color: var(--danger) !important; }
+.main-content .toast-notification { color: inherit !important; }
