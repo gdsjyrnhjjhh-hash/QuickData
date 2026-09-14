@@ -44,6 +44,25 @@
         .overdue-tag { font-size: 9px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-full); margin-right: 6px; }
         .overdue-tag.warn { background: var(--warning-bg); color: var(--warning); }
         .overdue-tag.danger { background: var(--danger-bg); color: var(--danger); }
+
+        /* ===== شريط الفلترة بالحالة + البحث ===== */
+        .task-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .task-filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+        .task-filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .task-filter-bar .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+        .task-filter-bar .search-input-wrap i {
+            position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: var(--text-tertiary); font-size: 13px;
+        }
+        .task-filter-bar .search-input-wrap input[type="text"] {
+            width: 100%; padding: 6px 34px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .task-filter-bar .search-input-wrap input[type="text"]:focus {
+            outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08);
+        }
     </style>
 </head>
 <body>
@@ -161,6 +180,11 @@
                     <div class="stat-number" id="statOverdue">0</div>
                     <div class="stat-label">متأخرة / غير منجزة</div>
                 </div>
+                <div class="stat-card stat-green" onclick="showCompletedTasks()">
+                    <span class="stat-icon"><i class="bi bi-check2-circle"></i></span>
+                    <div class="stat-number" id="statCompleted">0</div>
+                    <div class="stat-label">الأعمال المنفذة</div>
+                </div>
             </div>
 
             <div id="errorBanner" class="error-banner">
@@ -200,7 +224,10 @@
 
             <!-- ===== التبويبات الثلاثة ===== -->
             <div class="tabs-bar">
-                <button class="tab-btn tab-critical active" data-priority="critical" onclick="switchTab('critical')">
+                <button class="tab-btn tab-all active" data-priority="all" onclick="switchTab('all')">
+                    <i class="bi bi-list-ul"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
+                </button>
+                <button class="tab-btn tab-critical" data-priority="critical" onclick="switchTab('critical')">
                     <i class="bi bi-exclamation-octagon-fill"></i> مهام مهمة جدًا <span class="tab-count" id="tabCountCritical">0</span>
                 </button>
                 <button class="tab-btn tab-important" data-priority="important" onclick="switchTab('important')">
@@ -209,6 +236,21 @@
                 <button class="tab-btn tab-deferrable" data-priority="deferrable" onclick="switchTab('deferrable')">
                     <i class="bi bi-hourglass-split"></i> مهام ممكن تتأجل <span class="tab-count" id="tabCountDeferrable">0</span>
                 </button>
+            </div>
+
+            <!-- ===== فلترة بالحالة + بحث ===== -->
+            <div class="task-filter-bar">
+                <label for="taskStatusFilter"><i class="bi bi-funnel-fill"></i> الحالة:</label>
+                <select id="taskStatusFilter" onchange="renderTasksTable()">
+                    <option value="">النشطة (غير المنفذة)</option>
+                    <option value="pending">لسه هتتنفذ</option>
+                    <option value="deferred">أُجّلت</option>
+                    <option value="done">نُفّذت</option>
+                </select>
+                <div class="search-input-wrap">
+                    <input type="text" id="taskSearchInput" placeholder="ابحث باسم المهمة أو الجهة المنسّقة لها..." oninput="renderTasksTable()" />
+                    <i class="bi bi-search"></i>
+                </div>
             </div>
 
             <div class="panel">
@@ -249,7 +291,7 @@
 
     <script>
         var tasksCache = [];
-        var currentTab = 'critical';
+        var currentTab = 'all';
 
         // حدود الإشعار بالأيام (قابلة للتعديل من هنا فقط)
         var NOTIFY_UNFINISHED_AFTER_DAYS = 2;   // بعدها: "غير منجزة"
@@ -306,15 +348,21 @@
             var important = tasksCache.filter(function(t){ return t.priority === 'important' && t.status === 'pending'; });
             var deferrable = tasksCache.filter(function(t){ return t.priority === 'deferrable' && t.status === 'pending'; });
             var overdue = tasksCache.filter(function(t){ return t.status === 'pending' && daysSince(t.created_at) >= NOTIFY_UNFINISHED_AFTER_DAYS; });
+            var completed = tasksCache.filter(function(t){ return t.status === 'done'; });
 
             document.getElementById('statCritical').textContent = critical.length;
             document.getElementById('statImportant').textContent = important.length;
             document.getElementById('statDeferrable').textContent = deferrable.length;
             document.getElementById('statOverdue').textContent = overdue.length;
+            document.getElementById('statCompleted').textContent = completed.length;
 
-            document.getElementById('tabCountCritical').textContent = tasksCache.filter(function(t){ return t.priority === 'critical'; }).length;
-            document.getElementById('tabCountImportant').textContent = tasksCache.filter(function(t){ return t.priority === 'important'; }).length;
-            document.getElementById('tabCountDeferrable').textContent = tasksCache.filter(function(t){ return t.priority === 'deferrable'; }).length;
+            // عدّاد كل تبويب بيوضح المهام النشطة (غير المنفذة) بتاعته فقط،
+            // لأن المنفذة بتتفلتر تلقائيًا وتتشاف من خلال فلتر الحالة
+            var notDone = function(list) { return list.filter(function(t){ return t.status !== 'done'; }); };
+            document.getElementById('tabCountAll').textContent = notDone(tasksCache).length;
+            document.getElementById('tabCountCritical').textContent = notDone(tasksCache.filter(function(t){ return t.priority === 'critical'; })).length;
+            document.getElementById('tabCountImportant').textContent = notDone(tasksCache.filter(function(t){ return t.priority === 'important'; })).length;
+            document.getElementById('tabCountDeferrable').textContent = notDone(tasksCache.filter(function(t){ return t.priority === 'deferrable'; })).length;
         }
 
         function switchTab(priority) {
@@ -323,11 +371,19 @@
                 btn.classList.toggle('active', btn.getAttribute('data-priority') === priority);
             });
             var titles = {
+                all: '<i class="bi bi-list-ul"></i> كل المهام',
                 critical: '<i class="bi bi-exclamation-octagon-fill"></i> مهام مهمة جدًا',
                 important: '<i class="bi bi-star-fill"></i> مهام مهمة فقط',
                 deferrable: '<i class="bi bi-hourglass-split"></i> مهام ممكن تتأجل'
             };
             document.getElementById('activeTabTitle').innerHTML = titles[priority];
+            renderTasksTable();
+        }
+
+        // اختصار: بيروح لتبويب "الكل" ويفلتر بالحالة "نُفّذت" — القائمة الكاملة للأعمال المنفذة
+        function showCompletedTasks() {
+            switchTab('all');
+            document.getElementById('taskStatusFilter').value = 'done';
             renderTasksTable();
         }
 
@@ -343,11 +399,25 @@
 
         function renderTasksTable() {
             var tbody = document.getElementById('tasksTableBody');
-            var filtered = tasksCache.filter(function(t) { return t.priority === currentTab; });
-            document.getElementById('tasksCount').textContent = filtered.length + ' مهمة';
+            var statusFilter = document.getElementById('taskStatusFilter').value;
+            var searchInput = document.getElementById('taskSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            var filtered = tasksCache.filter(function(t) {
+                var matchesPriority = currentTab === 'all' || t.priority === currentTab;
+                var matchesStatus = statusFilter ? t.status === statusFilter : t.status !== 'done';
+                var matchesSearch = !searchTerm || (
+                    ((t.title || '') + ' ' + (t.coordinated_with || '')).toLowerCase().indexOf(searchTerm) !== -1
+                );
+                return matchesPriority && matchesStatus && matchesSearch;
+            });
+
+            document.getElementById('tasksCount').textContent = filtered.length + ' مهمة' +
+                (statusFilter || searchTerm ? ' (من ' + tasksCache.length + ')' : '');
 
             if (!filtered.length) {
-                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>لا توجد مهام في هذه القائمة بعد</td></tr>';
+                var emptyMsg = (statusFilter || searchTerm) ? 'لا توجد نتائج مطابقة' : 'لا توجد مهام في هذه القائمة بعد';
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>' + emptyMsg + '</td></tr>';
                 return;
             }
 

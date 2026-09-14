@@ -47,6 +47,17 @@
             padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
             font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
         }
+        .branch-filter-bar .search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+        .branch-filter-bar .search-input-wrap i {
+            position: absolute; top: 50%; right: 12px; transform: translateY(-50%); color: var(--text-tertiary); font-size: 13px;
+        }
+        .branch-filter-bar .search-input-wrap input[type="text"] {
+            width: 100%; padding: 6px 34px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .branch-filter-bar .search-input-wrap input[type="text"]:focus {
+            outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08);
+        }
         .branch-filter-bar .btn-print {
             margin-right: auto; padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
             background: var(--surface); color: var(--text); font-weight: 700; font-size: 12.5px;
@@ -166,7 +177,7 @@
         <div class="dashboard-content">
 
             <div class="print-report-header" id="printReportHeader">
-                <h2>تقرير المشتريات — اللوحة الإدارية QuickData</h2>
+                <h2 id="printReportTitle">تقرير المشتريات — اللوحة الإدارية QuickData</h2>
                 <p id="printReportMeta">تاريخ إصدار التقرير: —</p>
             </div>
 
@@ -281,6 +292,10 @@
                     <select id="purchaseBranchFilter" onchange="renderPurchasesTable()">
                         <option value="">كل الفروع</option>
                     </select>
+                    <div class="search-input-wrap">
+                        <input type="text" id="purchaseSearchInput" placeholder="ابحث بالوصف، نوع الشراء، أو اسم المورد..." oninput="renderPurchasesTable()" />
+                        <i class="bi bi-search"></i>
+                    </div>
                     <button class="btn-print" onclick="printPurchasesReport()">
                         <i class="bi bi-printer-fill"></i> طباعة التقرير
                     </button>
@@ -341,6 +356,16 @@
                     </div>
                 </div>
 
+                <div class="branch-filter-bar no-print">
+                    <div class="search-input-wrap">
+                        <input type="text" id="supplierSearchInput" placeholder="ابحث بالاسم، النشاط، الموبايل، أو الكود..." oninput="renderSuppliersTable()" />
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <button class="btn-print" onclick="printSuppliersReport()">
+                        <i class="bi bi-printer-fill"></i> طباعة التقرير
+                    </button>
+                </div>
+
                 <div class="panel">
                     <div class="panel-header">
                         <h5 class="panel-title"><i class="bi bi-people-fill"></i> الموردون المسجّلون</h5>
@@ -391,6 +416,16 @@
                             </button>
                         </div>
                     </div>
+                </div>
+
+                <div class="branch-filter-bar no-print">
+                    <div class="search-input-wrap">
+                        <input type="text" id="offerSearchInput" placeholder="ابحث باسم العرض أو اسم الجهة..." oninput="renderOffersTable()" />
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <button class="btn-print" onclick="printOffersReport()">
+                        <i class="bi bi-printer-fill"></i> طباعة التقرير
+                    </button>
                 </div>
 
                 <div class="panel">
@@ -536,14 +571,27 @@
 
         function renderSuppliersTable() {
             var tbody = document.getElementById('suppliersTableBody');
-            document.getElementById('suppliersCount').textContent = suppliersCache.length + ' مورد';
+            var searchInput = document.getElementById('supplierSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-            if (!suppliersCache.length) {
-                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><i class="bi bi-inbox"></i>لا يوجد موردون مسجّلون بعد</td></tr>';
+            var filtered = suppliersCache.filter(function(s) {
+                if (!searchTerm) return true;
+                var haystack = (
+                    (s.name || '') + ' ' + (s.activity || '') + ' ' + (s.mobile || '') + ' ' + (s.supplier_code || '')
+                ).toLowerCase();
+                return haystack.indexOf(searchTerm) !== -1;
+            });
+
+            document.getElementById('suppliersCount').textContent = filtered.length + ' مورد' +
+                (searchTerm ? ' (من ' + suppliersCache.length + ')' : '');
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="7"><i class="bi bi-inbox"></i>' +
+                    (searchTerm ? 'لا توجد نتائج مطابقة للبحث' : 'لا يوجد موردون مسجّلون بعد') + '</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = suppliersCache.map(function(s, index) {
+            tbody.innerHTML = filtered.map(function(s, index) {
                 var regDateStr = s.registration_date ? new Date(s.registration_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
                 return (
                     '<tr>' +
@@ -620,12 +668,25 @@
         function renderPurchasesTable() {
             var tbody = document.getElementById('purchasesTableBody');
             var branchFilter = document.getElementById('purchaseBranchFilter').value;
-            var filtered = purchasesCache.filter(function(p) { return !branchFilter || p.branch_id === branchFilter; });
+            var searchInput = document.getElementById('purchaseSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-            document.getElementById('purchasesCount').textContent = filtered.length + ' عملية';
+            var filtered = purchasesCache.filter(function(p) {
+                if (branchFilter && p.branch_id !== branchFilter) return false;
+                if (!searchTerm) return true;
+                var haystack = (
+                    (p.item_description || '') + ' ' + (p.purchase_type || '') + ' ' +
+                    supplierName(p.supplier_id) + ' ' + (p.notes || '')
+                ).toLowerCase();
+                return haystack.indexOf(searchTerm) !== -1;
+            });
+
+            document.getElementById('purchasesCount').textContent = filtered.length + ' عملية' +
+                (searchTerm || branchFilter ? ' (من ' + purchasesCache.length + ')' : '');
 
             if (!filtered.length) {
-                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-inbox"></i>لا توجد مشتريات مسجّلة بعد</td></tr>';
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-inbox"></i>' +
+                    (searchTerm || branchFilter ? 'لا توجد نتائج مطابقة' : 'لا توجد مشتريات مسجّلة بعد') + '</td></tr>';
                 return;
             }
 
@@ -708,12 +769,44 @@
         function printPurchasesReport() {
             var branchFilter = document.getElementById('purchaseBranchFilter').value;
             var branchLabel = branchFilter ? branchName(branchFilter) : 'كل الفروع';
+            var searchInput = document.getElementById('purchaseSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim() : '';
             var now = new Date();
             var nowStr = now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+
+            document.getElementById('printReportTitle').textContent = 'تقرير المشتريات — اللوحة الإدارية QuickData';
             document.getElementById('printReportMeta').textContent =
-                'الفرع: ' + branchLabel + ' | تاريخ إصدار التقرير: ' + nowStr;
+                'الفرع: ' + branchLabel + (searchTerm ? ' | بحث: ' + searchTerm : '') + ' | تاريخ إصدار التقرير: ' + nowStr;
 
             switchSection('purchases');
+            window.print();
+        }
+
+        function printSuppliersReport() {
+            var searchInput = document.getElementById('supplierSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim() : '';
+            var now = new Date();
+            var nowStr = now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+
+            document.getElementById('printReportTitle').textContent = 'تقرير الموردين — اللوحة الإدارية QuickData';
+            document.getElementById('printReportMeta').textContent =
+                (searchTerm ? 'بحث: ' + searchTerm + ' | ' : '') + 'تاريخ إصدار التقرير: ' + nowStr;
+
+            switchSection('suppliers');
+            window.print();
+        }
+
+        function printOffersReport() {
+            var searchInput = document.getElementById('offerSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim() : '';
+            var now = new Date();
+            var nowStr = now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+
+            document.getElementById('printReportTitle').textContent = 'تقرير عروض الأسعار — اللوحة الإدارية QuickData';
+            document.getElementById('printReportMeta').textContent =
+                (searchTerm ? 'بحث: ' + searchTerm + ' | ' : '') + 'تاريخ إصدار التقرير: ' + nowStr;
+
+            switchSection('offers');
             window.print();
         }
 
@@ -735,14 +828,25 @@
 
         function renderOffersTable() {
             var tbody = document.getElementById('offersTableBody');
-            document.getElementById('offersCount').textContent = offersCache.length + ' عرض';
+            var searchInput = document.getElementById('offerSearchInput');
+            var searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-            if (!offersCache.length) {
-                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>لا توجد عروض أسعار مسجّلة بعد</td></tr>';
+            var filtered = offersCache.filter(function(o) {
+                if (!searchTerm) return true;
+                var haystack = ((o.offer_name || '') + ' ' + (o.entity_name || '')).toLowerCase();
+                return haystack.indexOf(searchTerm) !== -1;
+            });
+
+            document.getElementById('offersCount').textContent = filtered.length + ' عرض' +
+                (searchTerm ? ' (من ' + offersCache.length + ')' : '');
+
+            if (!filtered.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>' +
+                    (searchTerm ? 'لا توجد نتائج مطابقة للبحث' : 'لا توجد عروض أسعار مسجّلة بعد') + '</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = offersCache.map(function(o, index) {
+            tbody.innerHTML = filtered.map(function(o, index) {
                 var dateStr = o.offer_date ? new Date(o.offer_date + 'T00:00:00').toLocaleDateString('ar-EG') : '—';
                 return (
                     '<tr>' +
