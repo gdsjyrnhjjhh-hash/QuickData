@@ -63,6 +63,31 @@
         .task-filter-bar .search-input-wrap input[type="text"]:focus {
             outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08);
         }
+
+        .task-filter-bar .btn-print {
+            padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text); font-weight: 700; font-size: 12.5px;
+            display: flex; align-items: center; gap: 6px; transition: var(--t-base); height: 34px;
+            margin-right: auto;
+        }
+        .task-filter-bar .btn-print:hover { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
+
+        /* ===== رأس التقرير (يظهر فقط عند الطباعة) ===== */
+        .print-report-header { display: none; }
+
+        @media print {
+            .sidebar, .sidebar-overlay, .navbar-custom, .footer-custom, .no-print, #errorBanner { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; }
+            .dashboard-content { padding: 0 !important; }
+            body { background: #fff !important; }
+            .print-report-header {
+                display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #333;
+            }
+            .print-report-header h2 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+            .print-report-header p { font-size: 12px; color: #555; }
+            .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
+            table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -148,7 +173,12 @@
 
         <div class="dashboard-content">
 
-            <div class="page-header">
+            <div class="print-report-header" id="printReportHeader">
+                <h2 id="printReportTitle">تقرير تنسيق الأعمال (المهام) — اللوحة الإدارية QuickData</h2>
+                <p id="printReportMeta">تاريخ إصدار التقرير: —</p>
+            </div>
+
+            <div class="page-header no-print">
                 <div class="ph-left">
                     <h2>تنسيق الأعمال (المهام)</h2>
                     <p>3 قوائم حسب الأولوية + تنبيهات تلقائية للمهام المتأخرة</p>
@@ -159,7 +189,7 @@
                 </div>
             </div>
 
-            <div class="stats-grid">
+            <div class="stats-grid no-print">
                 <div class="stat-card stat-red">
                     <span class="stat-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
                     <div class="stat-number" id="statCritical">0</div>
@@ -193,7 +223,7 @@
             </div>
 
             <!-- ===== إضافة مهمة جديدة ===== -->
-            <div class="panel" style="margin-bottom: 20px;">
+            <div class="panel no-print" style="margin-bottom: 20px;">
                 <div class="panel-header">
                     <h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة مهمة جديدة</h5>
                 </div>
@@ -223,7 +253,7 @@
             </div>
 
             <!-- ===== التبويبات الثلاثة ===== -->
-            <div class="tabs-bar">
+            <div class="tabs-bar no-print">
                 <button class="tab-btn tab-all active" data-priority="all" onclick="switchTab('all')">
                     <i class="bi bi-list-ul"></i> الكل <span class="tab-count" id="tabCountAll">0</span>
                 </button>
@@ -239,7 +269,7 @@
             </div>
 
             <!-- ===== فلترة بالحالة + بحث ===== -->
-            <div class="task-filter-bar">
+            <div class="task-filter-bar no-print">
                 <label for="taskStatusFilter"><i class="bi bi-funnel-fill"></i> الحالة:</label>
                 <select id="taskStatusFilter" onchange="renderTasksTable()">
                     <option value="">النشطة (غير المنفذة)</option>
@@ -251,6 +281,9 @@
                     <input type="text" id="taskSearchInput" placeholder="ابحث باسم المهمة أو الجهة المنسّقة لها..." oninput="renderTasksTable()" />
                     <i class="bi bi-search"></i>
                 </div>
+                <button class="btn-print" onclick="printTasksReport()">
+                    <i class="bi bi-printer-fill"></i> طباعة التقرير
+                </button>
             </div>
 
             <div class="panel">
@@ -378,6 +411,22 @@
             };
             document.getElementById('activeTabTitle').innerHTML = titles[priority];
             renderTasksTable();
+        }
+
+        function printTasksReport() {
+            var titles = {
+                all: 'تقرير كل المهام',
+                critical: 'تقرير المهام المهمة جدًا',
+                important: 'تقرير المهام المهمة',
+                deferrable: 'تقرير المهام الممكن تأجيلها'
+            };
+            var now = new Date();
+            var nowStr = now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+
+            document.getElementById('printReportTitle').textContent = (titles[currentTab] || titles.all) + ' — اللوحة الإدارية QuickData';
+            document.getElementById('printReportMeta').textContent = 'تاريخ إصدار التقرير: ' + nowStr;
+
+            window.print();
         }
 
         // اختصار: بيروح لتبويب "الكل" ويفلتر بالحالة "نُفّذت" — القائمة الكاملة للأعمال المنفذة
