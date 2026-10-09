@@ -608,3 +608,10 @@ body:not(.no-vivid-text) .main-content .toast-notification {
 }
 body:not(.no-vivid-text) .main-content .error-banner { color: var(--danger) !important; }
 body:not(.no-vivid-text) .main-content .toast-notification { color: inherit !important; }
+
+/* إصلاح: نص الأزرار الأساسية (إضافة / حفظ ...) كان بيظهر غامق على خلفية غامقة
+   بسبب قاعدة color: inherit أعلاه — نثبّت لونه صراحةً */
+body:not(.no-vivid-text) .main-content .btn-primary,
+body:not(.no-vivid-text) .main-content .btn-primary i { color: var(--text-inverse) !important; }
+body.dark-mode:not(.no-vivid-text) .main-content .btn-primary,
+body.dark-mode:not(.no-vivid-text) .main-content .btn-primary i { color: var(--text) !important; }
