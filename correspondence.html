@@ -75,6 +75,20 @@
             .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
             table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
         }
+
+        .modal-box.wide { max-width: 680px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .modal-box textarea { width: 100%; resize: vertical; line-height: 1.8; }
+        .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-icon-move { background: var(--warning-bg); color: var(--warning); border-color: var(--border); }
+        .btn-icon-move:hover { background: var(--warning); color: white; }
+        .btn-icon-back { background: var(--success-bg, var(--info-bg)); color: var(--success); border-color: var(--border); }
+        .btn-icon-back:hover { background: var(--success); color: white; }
+        .body-indicator { color: var(--accent); margin-right: 6px; font-size: 12px; }
+        .body-field { margin-top: 4px; }
+        .body-field label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .body-field textarea { width: 100%; min-height: 140px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 13.5px; background: var(--surface); color: var(--text); resize: vertical; line-height: 1.9; }
+        .body-field textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
     </style>
 </head>
 <body>
@@ -107,6 +121,8 @@
                 <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات</a></li>
                 <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال</a></li>
                 <li><a href="correspondence.html" class="active"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="housing.html"><i class="bi bi-house-door-fill"></i> السكن <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="fines.html"><i class="bi bi-cone-striped"></i> مخالفات السيارات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
                 <li><a href="support.html"><i class="bi bi-headset"></i> التواصل والدعم الفني</a></li>
             </ul>
@@ -232,6 +248,10 @@
                             <i class="bi bi-plus-lg"></i> إضافة
                         </button>
                     </div>
+                    <div class="body-field">
+                        <label for="newCorrBody">نص المخاطبة (اكتب بحرية — مثل مربع نص في Word، مثلًا مخاطبة إدارة المشتريات)</label>
+                        <textarea id="newCorrBody" placeholder="اكتب نص المخاطبة هنا بالتفصيل..."></textarea>
+                    </div>
                 </div>
             </div>
 
@@ -298,6 +318,25 @@
             </div>
         </div>
     </footer>
+
+    <!-- ===== مودال فتح / تعديل المخاطبة ===== -->
+    <div class="modal-overlay no-print" id="corrEditModal">
+        <div class="modal-box wide">
+            <h3><i class="bi bi-pencil-square"></i> المخاطبة</h3>
+            <input type="hidden" id="editCorrId" />
+            <div class="mf"><label for="editCorrSubject">الموضوع</label><input type="text" id="editCorrSubject" /></div>
+            <div class="mf"><label for="editCorrDept">القسم</label><input type="text" id="editCorrDept" list="deptSuggestions" /></div>
+            <div class="mf"><label for="editCorrDate">التاريخ</label><input type="date" id="editCorrDate" /></div>
+            <div class="mf"><label for="editCorrBody">نص المخاطبة</label>
+                <textarea id="editCorrBody" rows="12" placeholder="اكتب أو عدّل نص المخاطبة هنا..."></textarea></div>
+            <div class="mf"><label for="editCorrNotes">ملاحظات</label><input type="text" id="editCorrNotes" /></div>
+            <div class="modal-actions">
+                <button class="btn-action" onclick="closeModalById('corrEditModal')">إلغاء</button>
+                <button class="btn-action" onclick="printCorrLetter()"><i class="bi bi-printer-fill"></i> طباعة النص</button>
+                <button class="btn-action btn-primary" onclick="saveCorrEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+            </div>
+        </div>
+    </div>
 
     <script src="layout.js"></script>
 
@@ -432,7 +471,7 @@
                 return (
                     '<tr>' +
                         '<td>' + (index + 1) + '</td>' +
-                        '<td>' + escapeHtml(c.subject) + '</td>' +
+                        '<td>' + escapeHtml(c.subject) + (c.body ? '<i class="bi bi-file-earmark-text-fill body-indicator" title="لها نص مخاطبة"></i>' : '') + '</td>' +
                         '<td>' + (c.department ? '<span class="dept-tag">' + escapeHtml(c.department) + '</span>' : '—') + '</td>' +
                         '<td>' + dateStr + '</td>' +
                         '<td>' +
@@ -443,7 +482,10 @@
                             '</select>' +
                         '</td>' +
                         '<td>' + (c.notes ? escapeHtml(c.notes) : '—') + '</td>' +
-                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteCorrespondence(\'' + c.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                        '<td><div class="row-actions">' +
+                            '<button class="btn-icon btn-icon-edit" title="فتح / تعديل المخاطبة" onclick="openCorrEdit(\'' + c.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                            '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteCorrespondence(\'' + c.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                        '</div></td>' +
                     '</tr>'
                 );
             }).join('');
@@ -454,13 +496,14 @@
             var department = document.getElementById('newDepartment').value.trim();
             var corrDate = document.getElementById('newCorrDate').value || null;
             var notes = document.getElementById('newCorrNotes').value.trim();
+            var body = document.getElementById('newCorrBody').value.trim();
 
             if (!subject) {
                 showToast('اكتب موضوع المخاطبة أولاً', 'warning');
                 return;
             }
             try {
-                var payload = { subject: subject, department: department || null, notes: notes || null, status: 'pending' };
+                var payload = { subject: subject, department: department || null, notes: notes || null, body: body || null, status: 'pending' };
                 if (corrDate) payload.correspondence_date = corrDate;
 
                 await Supabase.addData('admin_correspondence', payload);
@@ -468,6 +511,7 @@
                 document.getElementById('newDepartment').value = '';
                 document.getElementById('newCorrDate').value = '';
                 document.getElementById('newCorrNotes').value = '';
+                document.getElementById('newCorrBody').value = '';
                 showToast('تمت إضافة المخاطبة بنجاح', 'success');
                 await loadCorrespondence();
             } catch (error) {
@@ -488,6 +532,59 @@
                 showToast('فشل تحديث حالة المخاطبة', 'error');
                 await loadCorrespondence();
             }
+        }
+
+        function openCorrEdit(id) {
+            var c = correspondenceCache.find(function(x) { return x.id === id; });
+            if (!c) return;
+            document.getElementById('editCorrId').value = c.id;
+            document.getElementById('editCorrSubject').value = c.subject || '';
+            document.getElementById('editCorrDept').value = c.department || '';
+            document.getElementById('editCorrDate').value = c.correspondence_date || '';
+            document.getElementById('editCorrBody').value = c.body || '';
+            document.getElementById('editCorrNotes').value = c.notes || '';
+            openModalById('corrEditModal');
+        }
+
+        async function saveCorrEdit() {
+            var id = document.getElementById('editCorrId').value;
+            var subject = document.getElementById('editCorrSubject').value.trim();
+            if (!subject) { showToast('الموضوع مطلوب', 'warning'); return; }
+            var payload = {
+                subject: subject,
+                department: document.getElementById('editCorrDept').value.trim() || null,
+                body: document.getElementById('editCorrBody').value.trim() || null,
+                notes: document.getElementById('editCorrNotes').value.trim() || null,
+                updated_at: new Date().toISOString()
+            };
+            var d = document.getElementById('editCorrDate').value;
+            if (d) payload.correspondence_date = d;
+            try {
+                await Supabase.updateData('admin_correspondence', id, payload);
+                closeModalById('corrEditModal');
+                showToast('تم حفظ المخاطبة', 'success');
+                await loadCorrespondence();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حفظ التعديل', 'error');
+            }
+        }
+
+        function printCorrLetter() {
+            var subject = document.getElementById('editCorrSubject').value;
+            var dept = document.getElementById('editCorrDept').value;
+            var date = document.getElementById('editCorrDate').value;
+            var body = document.getElementById('editCorrBody').value;
+            var w = window.open('', '_blank');
+            if (!w) { showToast('اسمح بالنوافذ المنبثقة للطباعة', 'warning'); return; }
+            var dStr = date ? new Date(date + 'T00:00:00').toLocaleDateString('ar-EG') : '';
+            w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + escapeHtml(subject) + '</title>' +
+                '<style>body{font-family:Cairo,Arial,sans-serif;padding:40px;line-height:2;font-size:15px}h2{margin-bottom:4px}.meta{color:#555;font-size:13px;margin-bottom:24px;border-bottom:1px solid #999;padding-bottom:10px}pre{white-space:pre-wrap;font-family:inherit}</style></head><body>' +
+                '<h2>' + escapeHtml(subject) + '</h2><div class="meta">' + (dept ? 'إلى: ' + escapeHtml(dept) + ' — ' : '') + escapeHtml(dStr) + '</div>' +
+                '<pre>' + escapeHtml(body) + '</pre></body></html>');
+            w.document.close();
+            w.focus();
+            setTimeout(function() { w.print(); }, 300);
         }
 
         async function deleteCorrespondence(id) {

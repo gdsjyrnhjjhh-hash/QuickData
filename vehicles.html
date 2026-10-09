@@ -31,7 +31,7 @@
         .tab-btn.tab-for_sale.active { background: var(--warning); border-color: var(--warning); }
         .tab-btn.tab-retired.active { background: var(--danger); border-color: var(--danger); }
 
-        .vehicle-form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .vehicle-form-grid { display: grid; grid-template-columns: repeat(8, 1fr) auto; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
         .vehicle-form-grid .form-field { margin-bottom: 0; }
         .vehicle-form-grid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
         .vehicle-form-grid input, .vehicle-form-grid select {
@@ -76,6 +76,17 @@
             .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
             table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
         }
+
+        .modal-box.wide { max-width: 680px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .modal-box textarea { width: 100%; resize: vertical; line-height: 1.8; }
+        .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-icon-move { background: var(--warning-bg); color: var(--warning); border-color: var(--border); }
+        .btn-icon-move:hover { background: var(--warning); color: white; }
+        .btn-icon-back { background: var(--success-bg, var(--info-bg)); color: var(--success); border-color: var(--border); }
+        .btn-icon-back:hover { background: var(--success); color: white; }
+        .tab-btn.tab-other.active { background: var(--accent); border-color: var(--accent); }
+        .other-note { display: block; font-size: 10.5px; color: var(--text-tertiary); margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -108,6 +119,8 @@
                 <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="housing.html"><i class="bi bi-house-door-fill"></i> السكن <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="fines.html"><i class="bi bi-cone-striped"></i> مخالفات السيارات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
                 <li><a href="support.html"><i class="bi bi-headset"></i> التواصل والدعم الفني</a></li>
             </ul>
@@ -231,6 +244,10 @@
                             <input type="text" id="newSequenceNumber" placeholder="اختياري" />
                         </div>
                         <div class="form-field">
+                            <label for="newChassisNumber">رقم الهيكل</label>
+                            <input type="text" id="newChassisNumber" placeholder="اختياري" />
+                        </div>
+                        <div class="form-field">
                             <label for="newLicenseExpiry">انتهاء الاستمارة</label>
                             <input type="date" id="newLicenseExpiry" />
                         </div>
@@ -277,6 +294,9 @@
                 <button class="tab-btn tab-retired" data-status="retired" onclick="switchTab('retired')">
                     <i class="bi bi-x-octagon-fill"></i> منتهية/خارج الخدمة <span class="tab-count" id="tabCountRetired">0</span>
                 </button>
+                <button class="tab-btn tab-other" data-status="other" onclick="switchTab('other')">
+                    <i class="bi bi-three-dots"></i> أخرى <span class="tab-count" id="tabCountOther">0</span>
+                </button>
             </div>
 
             <div class="panel">
@@ -289,12 +309,12 @@
                         <thead>
                             <tr>
                                 <th>#</th><th>رقم اللوحة</th><th>نوع السيارة</th><th>الفرع</th>
-                                <th>الرقم التسلسلي</th><th>الاستمارة</th><th>الفحص</th><th>التأمين</th>
+                                <th>رقم الهيكل</th><th>الرقم التسلسلي</th><th>الاستمارة</th><th>الفحص</th><th>التأمين</th>
                                 <th>الحالة</th><th>إجراءات</th>
                             </tr>
                         </thead>
                         <tbody id="vehiclesTableBody">
-                            <tr class="empty-state-row"><td colspan="10"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
+                            <tr class="empty-state-row"><td colspan="11"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -316,6 +336,23 @@
             </div>
         </div>
     </footer>
+
+    <!-- ===== مودال تعديل السيارة ===== -->
+    <div class="modal-overlay no-print" id="vehicleEditModal">
+        <div class="modal-box wide">
+            <h3><i class="bi bi-pencil-square"></i> تعديل بيانات السيارة</h3>
+            <input type="hidden" id="editVehicleId" />
+            <div class="mf"><label for="editPlate">رقم اللوحة</label><input type="text" id="editPlate" /></div>
+            <div class="mf"><label for="editCarType">نوع السيارة</label><input type="text" id="editCarType" /></div>
+            <div class="mf"><label for="editChassis">رقم الهيكل</label><input type="text" id="editChassis" /></div>
+            <div class="mf"><label for="editSequence">الرقم التسلسلي</label><input type="text" id="editSequence" /></div>
+            <div class="mf"><label for="editStatusOther">ملاحظة الحالة (تظهر عند اختيار "أخرى")</label><input type="text" id="editStatusOther" /></div>
+            <div class="modal-actions">
+                <button class="btn-action" onclick="closeModalById('vehicleEditModal')">إلغاء</button>
+                <button class="btn-action btn-primary" onclick="saveVehicleEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+            </div>
+        </div>
+    </div>
 
     <script src="layout.js"></script>
 
@@ -379,7 +416,7 @@
                 renderVehiclesTable();
             } catch (error) {
                 console.error('خطأ في تحميل السيارات:', error);
-                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="10"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل السيارات. تأكد من تشغيل admin_schema_step5.sql</td></tr>';
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="11"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل السيارات. تأكد من تشغيل admin_schema_step5.sql</td></tr>';
                 throw error;
             }
         }
@@ -420,7 +457,8 @@
                 active_v: '<span class="status-badge status-active">نشطة</span>',
                 parked: '<span class="status-badge status-info">مركونة</span>',
                 for_sale: '<span class="status-badge status-pending">معروضة للبيع</span>',
-                retired: '<span class="status-badge status-cancelled">منتهية/خارج الخدمة</span>'
+                retired: '<span class="status-badge status-cancelled">منتهية/خارج الخدمة</span>',
+                other: '<span class="status-badge status-info">أخرى</span>'
             };
             return map[status] || map.active_v;
         }
@@ -444,6 +482,7 @@
             document.getElementById('tabCountParked').textContent = byStatus('parked').length;
             document.getElementById('tabCountForSale').textContent = byStatus('for_sale').length;
             document.getElementById('tabCountRetired').textContent = byStatus('retired').length;
+            document.getElementById('tabCountOther').textContent = byStatus('other').length;
         }
 
         function switchTab(status) {
@@ -456,7 +495,8 @@
                 active_v: '<i class="bi bi-check-circle-fill"></i> سيارات نشطة',
                 parked: '<i class="bi bi-p-square-fill"></i> سيارات مركونة',
                 for_sale: '<i class="bi bi-tag-fill"></i> سيارات معروضة للبيع',
-                retired: '<i class="bi bi-x-octagon-fill"></i> سيارات منتهية/خارج الخدمة'
+                retired: '<i class="bi bi-x-octagon-fill"></i> سيارات منتهية/خارج الخدمة',
+                other: '<i class="bi bi-three-dots"></i> سيارات بحالة أخرى'
             };
             document.getElementById('activeTabTitle').innerHTML = titles[status];
             renderVehiclesTable();
@@ -468,7 +508,8 @@
                 active_v: 'تقرير السيارات النشطة',
                 parked: 'تقرير السيارات المركونة',
                 for_sale: 'تقرير السيارات المعروضة للبيع',
-                retired: 'تقرير السيارات المنتهية / خارج الخدمة'
+                retired: 'تقرير السيارات المنتهية / خارج الخدمة',
+                other: 'تقرير السيارات بحالة أخرى'
             };
             var branchFilter = document.getElementById('branchFilter').value;
             var branchLabel = branchFilter ? branchName(branchFilter) : 'كل الفروع';
@@ -495,7 +536,7 @@
             document.getElementById('vehiclesCount').textContent = filtered.length + ' سيارة';
 
             if (!filtered.length) {
-                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="10"><i class="bi bi-inbox"></i>لا توجد سيارات في هذه القائمة بعد</td></tr>';
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="11"><i class="bi bi-inbox"></i>لا توجد سيارات في هذه القائمة بعد</td></tr>';
                 return;
             }
 
@@ -506,6 +547,7 @@
                         '<td>' + escapeHtml(v.plate_number) + '</td>' +
                         '<td>' + escapeHtml(v.car_type) + '</td>' +
                         '<td>' + branchName(v.branch_id) + '</td>' +
+                        '<td>' + escapeHtml(v.chassis_number || '—') + '</td>' +
                         '<td>' + escapeHtml(v.sequence_number || '—') + '</td>' +
                         '<td>' + expiryTag(v.license_expiry) + '</td>' +
                         '<td>' + expiryTag(v.inspection_expiry) + '</td>' +
@@ -516,9 +558,14 @@
                                 '<option value="parked"' + (normalizedStatus(v) === 'parked' ? ' selected' : '') + '>مركونة</option>' +
                                 '<option value="for_sale"' + (normalizedStatus(v) === 'for_sale' ? ' selected' : '') + '>معروضة للبيع</option>' +
                                 '<option value="retired"' + (normalizedStatus(v) === 'retired' ? ' selected' : '') + '>منتهية/خارج الخدمة</option>' +
+                                '<option value="other"' + (normalizedStatus(v) === 'other' ? ' selected' : '') + '>أخرى</option>' +
                             '</select>' +
+                            (normalizedStatus(v) === 'other' && v.status_other ? '<span class="other-note">' + escapeHtml(v.status_other) + '</span>' : '') +
                         '</td>' +
-                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteVehicle(\'' + v.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                        '<td><div class="row-actions">' +
+                            '<button class="btn-icon btn-icon-edit" title="تعديل" onclick="openVehicleEdit(\'' + v.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                            '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteVehicle(\'' + v.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                        '</div></td>' +
                     '</tr>'
                 );
             }).join('');
@@ -529,6 +576,7 @@
             var carType = document.getElementById('newCarType').value.trim();
             var branchId = document.getElementById('newBranch').value || null;
             var sequenceNumber = document.getElementById('newSequenceNumber').value.trim() || null;
+            var chassisNumber = document.getElementById('newChassisNumber').value.trim() || null;
             var licenseExpiry = document.getElementById('newLicenseExpiry').value || null;
             var inspectionExpiry = document.getElementById('newInspectionExpiry').value || null;
             var insuranceExpiry = document.getElementById('newInsuranceExpiry').value || null;
@@ -543,6 +591,7 @@
                     car_type: carType,
                     branch_id: branchId,
                     sequence_number: sequenceNumber,
+                    chassis_number: chassisNumber,
                     license_expiry: licenseExpiry,
                     inspection_expiry: inspectionExpiry,
                     insurance_expiry: insuranceExpiry
@@ -551,6 +600,7 @@
                 document.getElementById('newCarType').value = '';
                 document.getElementById('newBranch').value = '';
                 document.getElementById('newSequenceNumber').value = '';
+                document.getElementById('newChassisNumber').value = '';
                 document.getElementById('newLicenseExpiry').value = '';
                 document.getElementById('newInspectionExpiry').value = '';
                 document.getElementById('newInsuranceExpiry').value = '';
@@ -566,11 +616,55 @@
         async function changeVehicleStatus(id, newStatus) {
             try {
                 var dbStatus = newStatus === 'active_v' ? 'active' : newStatus;
-                await Supabase.updateData('admin_vehicles', id, { status: dbStatus, updated_at: new Date().toISOString() });
+                var payload = { status: dbStatus, updated_at: new Date().toISOString() };
+                if (newStatus === 'other') {
+                    var cur = vehiclesCache.find(function(x) { return x.id === id; });
+                    var note = prompt('اكتب حالة السيارة (مثال: في الورشة، معارة، ...):', (cur && cur.status_other) || '');
+                    if (note === null) { await loadVehicles(); return; }
+                    payload.status_other = note.trim() || null;
+                } else {
+                    payload.status_other = null;
+                }
+                await Supabase.updateData('admin_vehicles', id, payload);
                 await loadVehicles();
             } catch (error) {
                 console.error(error);
                 showToast('فشل تحديث حالة السيارة', 'error');
+            }
+        }
+
+        function openVehicleEdit(id) {
+            var v = vehiclesCache.find(function(x) { return x.id === id; });
+            if (!v) return;
+            document.getElementById('editVehicleId').value = v.id;
+            document.getElementById('editPlate').value = v.plate_number || '';
+            document.getElementById('editCarType').value = v.car_type || '';
+            document.getElementById('editChassis').value = v.chassis_number || '';
+            document.getElementById('editSequence').value = v.sequence_number || '';
+            document.getElementById('editStatusOther').value = v.status_other || '';
+            openModalById('vehicleEditModal');
+        }
+
+        async function saveVehicleEdit() {
+            var id = document.getElementById('editVehicleId').value;
+            var plate = document.getElementById('editPlate').value.trim();
+            var type = document.getElementById('editCarType').value.trim();
+            if (!plate || !type) { showToast('رقم اللوحة ونوع السيارة مطلوبان', 'warning'); return; }
+            try {
+                await Supabase.updateData('admin_vehicles', id, {
+                    plate_number: plate,
+                    car_type: type,
+                    chassis_number: document.getElementById('editChassis').value.trim() || null,
+                    sequence_number: document.getElementById('editSequence').value.trim() || null,
+                    status_other: document.getElementById('editStatusOther').value.trim() || null,
+                    updated_at: new Date().toISOString()
+                });
+                closeModalById('vehicleEditModal');
+                showToast('تم حفظ التعديل', 'success');
+                await loadVehicles();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حفظ التعديل', 'error');
             }
         }
 

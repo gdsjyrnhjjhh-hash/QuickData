@@ -88,6 +88,15 @@
             .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
             table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
         }
+
+        .modal-box.wide { max-width: 680px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .modal-box textarea { width: 100%; resize: vertical; line-height: 1.8; }
+        .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-icon-move { background: var(--warning-bg); color: var(--warning); border-color: var(--border); }
+        .btn-icon-move:hover { background: var(--warning); color: white; }
+        .btn-icon-back { background: var(--success-bg, var(--info-bg)); color: var(--success); border-color: var(--border); }
+        .btn-icon-back:hover { background: var(--success); color: white; }
     </style>
 </head>
 <body>
@@ -120,6 +129,8 @@
                 <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="housing.html"><i class="bi bi-house-door-fill"></i> السكن <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="fines.html"><i class="bi bi-cone-striped"></i> مخالفات السيارات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="support.html"><i class="bi bi-headset"></i> التواصل والدعم الفني</a></li>
             </ul>
@@ -276,6 +287,7 @@
                     <option value="pending">لسه هتتنفذ</option>
                     <option value="deferred">أُجّلت</option>
                     <option value="done">نُفّذت</option>
+                    <option value="transferred">رُحّلت</option>
                 </select>
                 <div class="search-input-wrap">
                     <input type="text" id="taskSearchInput" placeholder="ابحث باسم المهمة أو الجهة المنسّقة لها..." oninput="renderTasksTable()" />
@@ -319,6 +331,36 @@
             </div>
         </div>
     </footer>
+
+    <!-- ===== مودال تعديل المهمة ===== -->
+    <div class="modal-overlay no-print" id="taskEditModal">
+        <div class="modal-box wide">
+            <h3><i class="bi bi-pencil-square"></i> تعديل المهمة</h3>
+            <input type="hidden" id="editTaskId" />
+            <div class="mf"><label for="editTaskTitle">المهمة</label>
+                <textarea id="editTaskTitle" rows="4" placeholder="اكتب المهمة هنا..."></textarea></div>
+            <div class="mf"><label for="editTaskCoordinated">الجهة المنسّقة لها</label><input type="text" id="editTaskCoordinated" /></div>
+            <div class="mf"><label for="editTaskPriority">الأولوية</label>
+                <select id="editTaskPriority">
+                    <option value="critical">مهمة جدًا</option>
+                    <option value="important">مهمة فقط</option>
+                    <option value="deferrable">ممكن تتأجل</option>
+                </select></div>
+            <div class="mf"><label for="editTaskStatus">الحالة</label>
+                <select id="editTaskStatus">
+                    <option value="pending">قيد التنفيذ</option>
+                    <option value="deferred">أُجّلت</option>
+                    <option value="done">نُفّذت</option>
+                    <option value="transferred">رُحّلت</option>
+                </select></div>
+            <div class="mf"><label for="editTaskNotes">ملاحظات</label>
+                <textarea id="editTaskNotes" rows="3" placeholder="اختياري"></textarea></div>
+            <div class="modal-actions">
+                <button class="btn-action" onclick="closeModalById('taskEditModal')">إلغاء</button>
+                <button class="btn-action btn-primary" onclick="saveTaskEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+            </div>
+        </div>
+    </div>
 
     <script src="layout.js"></script>
 
@@ -486,7 +528,13 @@
                             '</select>' +
                         '</td>' +
                         '<td>' + dateStr + '</td>' +
-                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteTask(\'' + t.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                        '<td><div class="row-actions">' +
+                            '<button class="btn-icon btn-icon-edit" title="تعديل المهمة" onclick="openTaskEdit(\'' + t.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                            (t.status === 'transferred'
+                                ? '<button class="btn-icon btn-icon-back" title="إرجاع المهمة للتنفيذ" onclick="changeTaskStatus(\'' + t.id + '\', \'pending\')"><i class="bi bi-arrow-return-left"></i></button>'
+                                : (t.status !== 'done' ? '<button class="btn-icon btn-icon-move" title="ترحيل المهمة" onclick="changeTaskStatus(\'' + t.id + '\', \'transferred\')"><i class="bi bi-forward-fill"></i></button>' : '')) +
+                            '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteTask(\'' + t.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                        '</div></td>' +
                     '</tr>'
                 );
             }).join('');
@@ -522,11 +570,45 @@
         async function changeTaskStatus(id, newStatus) {
             try {
                 await Supabase.updateData('admin_tasks', id, { status: newStatus, updated_at: new Date().toISOString() });
-                showToast('تم تحديث حالة المهمة', 'success');
+                showToast(newStatus === 'transferred' ? 'تم ترحيل المهمة' : (newStatus === 'pending' ? 'تمت إعادة المهمة للتنفيذ' : 'تم تحديث حالة المهمة'), 'success');
                 await loadTasks();
             } catch (error) {
                 console.error(error);
                 showToast('فشل تحديث حالة المهمة', 'error');
+            }
+        }
+
+        function openTaskEdit(id) {
+            var t = tasksCache.find(function(x) { return x.id === id; });
+            if (!t) return;
+            document.getElementById('editTaskId').value = t.id;
+            document.getElementById('editTaskTitle').value = t.title || '';
+            document.getElementById('editTaskCoordinated').value = t.coordinated_with || '';
+            document.getElementById('editTaskPriority').value = t.priority || 'important';
+            document.getElementById('editTaskStatus').value = t.status || 'pending';
+            document.getElementById('editTaskNotes').value = t.notes || '';
+            openModalById('taskEditModal');
+        }
+
+        async function saveTaskEdit() {
+            var id = document.getElementById('editTaskId').value;
+            var title = document.getElementById('editTaskTitle').value.trim();
+            if (!title) { showToast('اكتب المهمة أولاً', 'warning'); return; }
+            try {
+                await Supabase.updateData('admin_tasks', id, {
+                    title: title,
+                    coordinated_with: document.getElementById('editTaskCoordinated').value.trim() || null,
+                    priority: document.getElementById('editTaskPriority').value,
+                    status: document.getElementById('editTaskStatus').value,
+                    notes: document.getElementById('editTaskNotes').value.trim() || null,
+                    updated_at: new Date().toISOString()
+                });
+                closeModalById('taskEditModal');
+                showToast('تم حفظ تعديل المهمة', 'success');
+                await loadTasks();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حفظ التعديل', 'error');
             }
         }
 

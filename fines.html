@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%9A%A8%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">مخالفات السيارات - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count { background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-full); }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+
+        .fgrid { display: grid; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .fgrid .form-field { margin-bottom: 0; }
+        .fgrid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .fgrid input, .fgrid select, .fgrid textarea {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .fgrid textarea { height: 60px; resize: vertical; line-height: 1.6; }
+        .fgrid input:focus, .fgrid select:focus, .fgrid textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 1100px) { .fgrid { grid-template-columns: 1fr 1fr !important; } }
+        @media (max-width: 600px) { .fgrid { grid-template-columns: 1fr !important; } }
+
+        .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+        .filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .filter-bar .search-wrap { position: relative; flex: 1; min-width: 220px; }
+        .filter-bar .search-wrap i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-size: 13px; pointer-events: none; }
+        .filter-bar .search-wrap input {
+            width: 100%; padding: 6px 34px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .filter-bar .search-wrap input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        .filter-bar .btn-print {
+            padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text); font-weight: 700; font-size: 12.5px;
+            display: flex; align-items: center; gap: 6px; transition: var(--t-base);
+        }
+        .filter-bar .btn-print:hover { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+        .pre-cell { white-space: pre-wrap; line-height: 1.7; max-width: 340px; }
+        .row-actions { display: flex; gap: 6px; }
+        .modal-box.wide { max-width: 640px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .modal-box textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.7; }
+
+        .print-report-header { display: none; }
+        @media print {
+            .sidebar, .sidebar-overlay, .navbar-custom, .footer-custom, .no-print, #errorBanner, .modal-overlay { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; }
+            .dashboard-content { padding: 0 !important; }
+            body { background: #fff !important; }
+            .print-report-header { display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #333; }
+            .print-report-header h2 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+            .print-report-header p { font-size: 12px; color: #555; }
+            .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
+            table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
+            .pre-cell { max-width: none; }
+            .status-select { display: none !important; }
+            .print-only-status { display: inline !important; }
+        }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>QuickData</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="housing.html"><i class="bi bi-house-door-fill"></i> السكن <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="fines.html" class="active"><i class="bi bi-cone-striped"></i> مخالفات السيارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="support.html"><i class="bi bi-headset"></i> التواصل والدعم الفني</a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    مخالفات السيارات
+                    <small>المخالفات وطريقة الخصم ومتابعة الوضع</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">QuickData</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="print-report-header">
+                <h2 id="printReportTitle">تقرير مخالفات السيارات — اللوحة الإدارية QuickData</h2>
+                <p id="printReportMeta">—</p>
+            </div>
+
+            <div class="page-header no-print">
+                <div class="ph-left">
+                    <h2>مخالفات السيارات</h2>
+                    <p>تسجيل المخالفات ومرتكبيها وطريقة الخصم ومتابعة هل تم الخصم أم لا</p>
+                </div>
+                <div class="ph-right"><strong>اليوم</strong><span id="headerDate">جاري التحميل...</span></div>
+            </div>
+
+            <div class="stats-grid no-print">
+                <div class="stat-card"><span class="stat-icon"><i class="bi bi-cone-striped"></i></span>
+                    <div class="stat-number" id="statTotal">0</div><div class="stat-label">إجمالي المخالفات</div></div>
+                <div class="stat-card stat-gold"><span class="stat-icon"><i class="bi bi-cash-stack"></i></span>
+                    <div class="stat-number" id="statTotalAmount">0</div><div class="stat-label">إجمالي مبالغ المخالفات</div></div>
+                <div class="stat-card stat-green"><span class="stat-icon"><i class="bi bi-check-circle-fill"></i></span>
+                    <div class="stat-number" id="statDeducted">0</div><div class="stat-label">تم خصمها</div></div>
+                <div class="stat-card stat-red"><span class="stat-icon"><i class="bi bi-hourglass-split"></i></span>
+                    <div class="stat-number" id="statPendingAmount">0</div><div class="stat-label">مبالغ لم تُخصم بعد</div></div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل المخالفات. تأكد من تشغيل admin_schema_step9.sql في Supabase.</span>
+                <button onclick="loadFinesPage()">إعادة المحاولة</button>
+            </div>
+
+            <div class="panel no-print" style="margin-bottom: 20px;">
+                <div class="panel-header"><h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة مخالفة</h5></div>
+                <div style="padding: 16px;">
+                    <div class="fgrid" style="grid-template-columns: 1.4fr 1fr 1.2fr 1fr 0.8fr 1.1fr 1fr auto;">
+                        <div class="form-field"><label for="newName">اسم المخالفة</label><input type="text" id="newName" placeholder="مثال: تجاوز السرعة" /></div>
+                        <div class="form-field"><label for="newDate">تاريخ المخالفة</label><input type="date" id="newDate" /></div>
+                        <div class="form-field"><label for="newViolator">اسم مرتكب المخالفة</label><input type="text" id="newViolator" /></div>
+                        <div class="form-field"><label for="newDept">القسم التابع له</label><input type="text" id="newDept" list="deptSuggestions" /><datalist id="deptSuggestions"></datalist></div>
+                        <div class="form-field"><label for="newAmount">مبلغ المخالفة</label><input type="number" id="newAmount" min="0" step="0.01" /></div>
+                        <div class="form-field"><label for="newMethod">طريقة الخصم</label><input type="text" id="newMethod" list="methodSuggestions" placeholder="مثال: من الراتب" /><datalist id="methodSuggestions"></datalist></div>
+                        <div class="form-field"><label for="newDeducted">الوضع الحالي</label>
+                            <select id="newDeducted"><option value="false">لم يتم الخصم</option><option value="true">تم الخصم</option></select></div>
+                        <button class="btn-action btn-primary" onclick="addFine()"><i class="bi bi-plus-lg"></i> إضافة</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs-bar no-print">
+                <button class="tab-btn active" data-tab="all" onclick="switchTab('all')"><i class="bi bi-list-ul"></i> الكل <span class="tab-count" id="tabCountAll">0</span></button>
+                <button class="tab-btn" data-tab="pending" onclick="switchTab('pending')"><i class="bi bi-hourglass-split"></i> لم يتم الخصم <span class="tab-count" id="tabCountPending">0</span></button>
+                <button class="tab-btn" data-tab="done" onclick="switchTab('done')"><i class="bi bi-check-circle-fill"></i> تم الخصم <span class="tab-count" id="tabCountDone">0</span></button>
+            </div>
+
+            <div class="filter-bar no-print">
+                <div class="search-wrap">
+                    <input type="text" id="searchInput" placeholder="ابحث بأي بيان: المخالفة، التاريخ، المرتكب، القسم، المبلغ، طريقة الخصم، الوضع..." oninput="renderFinesTable()" />
+                    <i class="bi bi-search"></i>
+                </div>
+                <button class="btn-print" onclick="printFines()"><i class="bi bi-printer-fill"></i> طباعة</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-cone-striped"></i> سجل المخالفات</h5>
+                    <span class="record-count" id="finesCount">0 مخالفة</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead><tr><th>رقم مسلسل</th><th>اسم المخالفة</th><th>التاريخ</th><th>مرتكب المخالفة</th><th>القسم</th><th>المبلغ</th><th>طريقة الخصم</th><th>الوضع الحالي</th><th>إجراءات</th></tr></thead>
+                        <tbody id="finesTableBody"><tr class="empty-state-row"><td colspan="9"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-overlay no-print" id="editModal">
+                <div class="modal-box wide">
+                    <h3><i class="bi bi-pencil-square"></i> تعديل المخالفة</h3>
+                    <input type="hidden" id="editId" />
+                    <div class="mf"><label for="editName">اسم المخالفة</label><input type="text" id="editName" /></div>
+                    <div class="mf"><label for="editDate">تاريخ المخالفة</label><input type="date" id="editDate" /></div>
+                    <div class="mf"><label for="editViolator">اسم مرتكب المخالفة</label><input type="text" id="editViolator" /></div>
+                    <div class="mf"><label for="editDept">القسم التابع له</label><input type="text" id="editDept" list="deptSuggestions" /></div>
+                    <div class="mf"><label for="editAmount">مبلغ المخالفة</label><input type="number" id="editAmount" min="0" step="0.01" /></div>
+                    <div class="mf"><label for="editMethod">طريقة الخصم</label><input type="text" id="editMethod" list="methodSuggestions" /></div>
+                    <div class="mf"><label for="editDeducted">الوضع الحالي</label>
+                        <select id="editDeducted"><option value="false">لم يتم الخصم</option><option value="true">تم الخصم</option></select></div>
+                    <div class="modal-actions">
+                        <button class="btn-action" onclick="closeModalById('editModal')">إلغاء</button>
+                        <button class="btn-action btn-primary" onclick="saveFineEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">QuickData — مخالفات السيارات</span>
+            </div>
+            <div class="footer-left"><span class="footer-version">موديول مخالفات السيارات</span></div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+    <script>
+
+        var finesCache = [];
+        var currentTab = 'all';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var u = initAdminPage({ onRefresh: loadFinesPage });
+            if (!u) return;
+            loadFinesPage();
+        });
+
+        async function loadFinesPage() {
+            var eb = document.getElementById('errorBanner');
+            eb.classList.remove('show');
+            try { await loadFines(); await loadNotificationsCount(); }
+            catch (e) { console.error(e); eb.classList.add('show'); }
+        }
+
+        async function loadFines() {
+            var tbody = document.getElementById('finesTableBody');
+            try {
+                finesCache = (await Supabase.fetchData('admin_traffic_fines', { order: 'created_at' }) || [])
+                    .sort(function(a, b) { return (a.serial_no || 0) - (b.serial_no || 0); });
+                updateStatsAndTabs();
+                populateSuggestions();
+                renderFinesTable();
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل المخالفات. تأكد من تشغيل admin_schema_step9.sql</td></tr>';
+                throw e;
+            }
+        }
+
+        function fmtMoney(n) { return (parseFloat(n) || 0).toLocaleString('ar-EG'); }
+        function fmtDate(d) { return d ? new Date(d + 'T00:00:00').toLocaleDateString('ar-EG') : '—'; }
+        function uniq(field) {
+            var v = finesCache.map(function(f) { return f[field]; }).filter(Boolean);
+            return v.filter(function(x, i) { return v.indexOf(x) === i; }).sort(function(a, b) { return a.localeCompare(b, 'ar'); });
+        }
+        function populateSuggestions() {
+            var opt = function(arr) { return arr.map(function(x) { return '<option value="' + escapeHtml(x) + '"></option>'; }).join(''); };
+            document.getElementById('deptSuggestions').innerHTML = opt(uniq('department'));
+            var methods = ['خصم من الراتب', 'نقدًا'].concat(uniq('deduction_method').filter(function(m) { return m !== 'خصم من الراتب' && m !== 'نقدًا'; }));
+            document.getElementById('methodSuggestions').innerHTML = opt(methods);
+        }
+
+        function updateStatsAndTabs() {
+            var done = finesCache.filter(function(f) { return f.is_deducted; });
+            var pending = finesCache.filter(function(f) { return !f.is_deducted; });
+            var sum = function(a) { return a.reduce(function(s, f) { return s + (parseFloat(f.amount) || 0); }, 0); };
+            document.getElementById('statTotal').textContent = finesCache.length;
+            document.getElementById('statTotalAmount').textContent = fmtMoney(sum(finesCache));
+            document.getElementById('statDeducted').textContent = done.length;
+            document.getElementById('statPendingAmount').textContent = fmtMoney(sum(pending));
+            document.getElementById('tabCountAll').textContent = finesCache.length;
+            document.getElementById('tabCountPending').textContent = pending.length;
+            document.getElementById('tabCountDone').textContent = done.length;
+        }
+
+        function switchTab(t) {
+            currentTab = t;
+            document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === t); });
+            renderFinesTable();
+        }
+
+        function statusText(f) { return f.is_deducted ? 'تم الخصم' : 'لم يتم الخصم'; }
+
+        function getFiltered() {
+            var term = document.getElementById('searchInput').value.trim().toLowerCase();
+            return finesCache.filter(function(f) {
+                if (currentTab === 'pending' && f.is_deducted) return false;
+                if (currentTab === 'done' && !f.is_deducted) return false;
+                if (!term) return true;
+                var hay = [f.serial_no, f.violation_name, f.violation_date, fmtDate(f.violation_date), f.violator_name, f.department, f.amount, f.deduction_method, statusText(f)].join(' ').toLowerCase();
+                return hay.indexOf(term) !== -1;
+            });
+        }
+
+        function renderFinesTable() {
+            var tbody = document.getElementById('finesTableBody');
+            var list = getFiltered();
+            document.getElementById('finesCount').textContent = list.length + ' مخالفة' + (list.length !== finesCache.length ? ' (من ' + finesCache.length + ')' : '');
+            if (!list.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="9"><i class="bi bi-inbox"></i>' + (finesCache.length ? 'لا توجد نتائج مطابقة' : 'لا توجد مخالفات مسجلة بعد') + '</td></tr>';
+                return;
+            }
+            tbody.innerHTML = list.map(function(f) {
+                return '<tr>' +
+                    '<td>' + escapeHtml(f.serial_no) + '</td>' +
+                    '<td>' + escapeHtml(f.violation_name) + '</td>' +
+                    '<td>' + fmtDate(f.violation_date) + '</td>' +
+                    '<td>' + escapeHtml(f.violator_name || '—') + '</td>' +
+                    '<td>' + escapeHtml(f.department || '—') + '</td>' +
+                    '<td><strong>' + (f.amount === null || f.amount === undefined ? '—' : fmtMoney(f.amount)) + '</strong></td>' +
+                    '<td>' + escapeHtml(f.deduction_method || '—') + '</td>' +
+                    '<td><select class="status-select" onchange="toggleDeducted(\'' + f.id + '\', this.value)">' +
+                        '<option value="false"' + (!f.is_deducted ? ' selected' : '') + '>لم يتم الخصم</option>' +
+                        '<option value="true"' + (f.is_deducted ? ' selected' : '') + '>تم الخصم</option></select>' +
+                        '<span class="print-only-status" style="display:none">' + statusText(f) + '</span></td>' +
+                    '<td><div class="row-actions">' +
+                        '<button class="btn-icon btn-icon-edit" title="تعديل" onclick="openEdit(\'' + f.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                        '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteFine(\'' + f.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                    '</div></td></tr>';
+            }).join('');
+        }
+
+        async function addFine() {
+            var name = document.getElementById('newName').value.trim();
+            if (!name) { showToast('اكتب اسم المخالفة أولاً', 'warning'); return; }
+            var amt = document.getElementById('newAmount').value;
+            try {
+                await Supabase.addData('admin_traffic_fines', {
+                    violation_name: name,
+                    violation_date: document.getElementById('newDate').value || null,
+                    violator_name: document.getElementById('newViolator').value.trim() || null,
+                    department: document.getElementById('newDept').value.trim() || null,
+                    amount: amt !== '' ? parseFloat(amt) : null,
+                    deduction_method: document.getElementById('newMethod').value.trim() || null,
+                    is_deducted: document.getElementById('newDeducted').value === 'true'
+                });
+                ['newName', 'newDate', 'newViolator', 'newDept', 'newAmount', 'newMethod'].forEach(function(id) { document.getElementById(id).value = ''; });
+                document.getElementById('newDeducted').value = 'false';
+                showToast('تمت إضافة المخالفة', 'success');
+                await loadFines();
+            } catch (e) { console.error(e); showToast('فشلت الإضافة', 'error'); }
+        }
+
+        async function toggleDeducted(id, val) {
+            try {
+                await Supabase.updateData('admin_traffic_fines', id, { is_deducted: val === 'true', updated_at: new Date().toISOString() });
+                await loadFines();
+            } catch (e) { console.error(e); showToast('فشل تحديث الوضع', 'error'); }
+        }
+
+        function openEdit(id) {
+            var f = finesCache.find(function(x) { return x.id === id; });
+            if (!f) return;
+            document.getElementById('editId').value = f.id;
+            document.getElementById('editName').value = f.violation_name || '';
+            document.getElementById('editDate').value = f.violation_date || '';
+            document.getElementById('editViolator').value = f.violator_name || '';
+            document.getElementById('editDept').value = f.department || '';
+            document.getElementById('editAmount').value = (f.amount === null || f.amount === undefined) ? '' : f.amount;
+            document.getElementById('editMethod').value = f.deduction_method || '';
+            document.getElementById('editDeducted').value = f.is_deducted ? 'true' : 'false';
+            openModalById('editModal');
+        }
+
+        async function saveFineEdit() {
+            var id = document.getElementById('editId').value;
+            var name = document.getElementById('editName').value.trim();
+            if (!name) { showToast('اسم المخالفة مطلوب', 'warning'); return; }
+            var amt = document.getElementById('editAmount').value;
+            try {
+                await Supabase.updateData('admin_traffic_fines', id, {
+                    violation_name: name,
+                    violation_date: document.getElementById('editDate').value || null,
+                    violator_name: document.getElementById('editViolator').value.trim() || null,
+                    department: document.getElementById('editDept').value.trim() || null,
+                    amount: amt !== '' ? parseFloat(amt) : null,
+                    deduction_method: document.getElementById('editMethod').value.trim() || null,
+                    is_deducted: document.getElementById('editDeducted').value === 'true',
+                    updated_at: new Date().toISOString()
+                });
+                closeModalById('editModal');
+                showToast('تم حفظ التعديل', 'success');
+                await loadFines();
+            } catch (e) { console.error(e); showToast('فشل حفظ التعديل', 'error'); }
+        }
+
+        async function deleteFine(id) {
+            if (!confirm('هل أنت متأكد من حذف هذه المخالفة؟')) return;
+            try {
+                await Supabase.deleteData('admin_traffic_fines', id);
+                showToast('تم الحذف', 'success');
+                await loadFines();
+            } catch (e) { console.error(e); showToast('فشل الحذف', 'error'); }
+        }
+
+        function printFines() {
+            var titles = { all: 'تقرير كل المخالفات', pending: 'تقرير المخالفات التي لم تُخصم', done: 'تقرير المخالفات التي تم خصمها' };
+            var now = new Date();
+            document.getElementById('printReportTitle').textContent = titles[currentTab] + ' — اللوحة الإدارية QuickData';
+            document.getElementById('printReportMeta').textContent = 'عدد المخالفات: ' + getFiltered().length + ' | تاريخ إصدار التقرير: ' + now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+            window.print();
+        }
+
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                document.getElementById('notifDot').classList.toggle('show', (unread || []).length > 0);
+            } catch (e) { console.error(e); }
+        }
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var n = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!n || !n.length) { showToast('لا توجد إشعارات حاليًا', 'info'); return; }
+                showToast('🔔 ' + n[0].title, n[0].level === 'danger' ? 'error' : (n[0].level === 'warning' ? 'warning' : 'info'));
+            } catch (e) { console.error(e); }
+        });
+
+    </script>
+</body>
+</html>

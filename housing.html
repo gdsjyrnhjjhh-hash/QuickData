@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%8F%A0%3C/text%3E%3C/svg%3E" />
+    <title id="pageTitle">السكن - اللوحة الإدارية</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script src="supabase.js"></script>
+    <link rel="stylesheet" href="theme.css" />
+
+    <style>
+        .tabs-bar { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab-btn {
+            padding: 8px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 600; font-size: 12.5px;
+            transition: var(--t-base); display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn .tab-count { background: var(--bg); color: var(--text-tertiary); font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-full); }
+        .tab-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.15); color: var(--text-inverse); }
+
+        .fgrid { display: grid; gap: 10px; align-items: flex-end; margin-bottom: 16px; }
+        .fgrid .form-field { margin-bottom: 0; }
+        .fgrid label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+        .fgrid input, .fgrid select, .fgrid textarea {
+            width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13px; background: var(--surface); color: var(--text); height: 36px;
+        }
+        .fgrid textarea { height: 60px; resize: vertical; line-height: 1.6; }
+        .fgrid input:focus, .fgrid select:focus, .fgrid textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        @media (max-width: 1100px) { .fgrid { grid-template-columns: 1fr 1fr !important; } }
+        @media (max-width: 600px) { .fgrid { grid-template-columns: 1fr !important; } }
+
+        .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .filter-bar label { font-size: 12.5px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; }
+        .filter-bar select {
+            padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .filter-bar .search-wrap { position: relative; flex: 1; min-width: 220px; }
+        .filter-bar .search-wrap i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-size: 13px; pointer-events: none; }
+        .filter-bar .search-wrap input {
+            width: 100%; padding: 6px 34px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px;
+        }
+        .filter-bar .search-wrap input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        .filter-bar .btn-print {
+            padding: 7px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text); font-weight: 700; font-size: 12.5px;
+            display: flex; align-items: center; gap: 6px; transition: var(--t-base);
+        }
+        .filter-bar .btn-print:hover { background: var(--primary); color: var(--text-inverse); border-color: var(--primary); }
+        .status-select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 11.5px; background: var(--surface); color: var(--text); }
+        .pre-cell { white-space: pre-wrap; line-height: 1.7; max-width: 340px; }
+        .row-actions { display: flex; gap: 6px; }
+        .modal-box.wide { max-width: 640px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .modal-box textarea { width: 100%; min-height: 90px; resize: vertical; line-height: 1.7; }
+
+        .print-report-header { display: none; }
+        @media print {
+            .sidebar, .sidebar-overlay, .navbar-custom, .footer-custom, .no-print, #errorBanner, .modal-overlay { display: none !important; }
+            .main-content { margin: 0 !important; padding: 0 !important; }
+            .dashboard-content { padding: 0 !important; }
+            body { background: #fff !important; }
+            .print-report-header { display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #333; }
+            .print-report-header h2 { font-family: var(--font-display); font-size: 20px; margin-bottom: 4px; }
+            .print-report-header p { font-size: 12px; color: #555; }
+            .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
+            table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
+            .pre-cell { max-width: none; }
+        }
+    </style>
+</head>
+<body>
+<script>(function(){try{if(localStorage.getItem('darkMode')==='true'){document.body.classList.add('dark-mode');}}catch(e){}})();</script>
+
+    <!-- ================================================================ -->
+    <!-- SIDEBAR -->
+    <!-- ================================================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark">إد</div>
+                <div class="brand-text">
+                    اللوحة <span>الإدارية</span>
+                    <small>QuickData</small>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">القائمة الرئيسية</div>
+            <ul class="nav-list">
+                <li><a href="index.html"><i class="bi bi-grid-1x2-fill"></i> الرئيسية</a></li>
+            </ul>
+
+            <div class="nav-section-title">الموديولات الإدارية</div>
+            <ul class="nav-list">
+                <li><a href="tasks.html"><i class="bi bi-kanban-fill"></i> تنسيق الأعمال</a></li>
+                <li><a href="vehicles.html"><i class="bi bi-car-front-fill"></i> السيارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="housing.html" class="active"><i class="bi bi-house-door-fill"></i> السكن <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="fines.html"><i class="bi bi-cone-striped"></i> مخالفات السيارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="ideas.html"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار</a></li>
+                <li><a href="support.html"><i class="bi bi-headset"></i> التواصل والدعم الفني</a></li>
+            </ul>
+
+            <div class="nav-section-title">الإعدادات</div>
+            <ul class="nav-list">
+                <li><a href="index.html#branches-panel"><i class="bi bi-signpost-split-fill"></i> إدارة الفروع</a></li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn" onclick="logout(); return false;">
+                <i class="bi bi-box-arrow-left"></i>
+                تسجيل الخروج
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ================================================================ -->
+    <main class="main-content" id="mainContent">
+
+        <nav class="navbar-custom">
+            <div class="navbar-left">
+                <button class="sidebar-toggle" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h4 class="page-title" id="pageTitleText">
+                    السكن
+                    <small>الغرف والموظفين ومحتويات الغرف</small>
+                </h4>
+            </div>
+
+            <div class="navbar-right">
+                <button class="nav-btn" id="darkModeToggle"><i class="bi bi-moon-fill"></i></button>
+                <button class="nav-btn" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i></button>
+                <button class="nav-btn" id="notifBtn">
+                    <i class="bi bi-bell-fill"></i>
+                    <span class="notification-dot" id="notifDot"></span>
+                </button>
+                <div class="user-profile">
+                    <div class="user-info">
+                        <span class="user-name" id="userName">مدير النظام</span>
+                        <span class="user-role" id="userRole">QuickData</span>
+                    </div>
+                    <div class="user-avatar" id="userAvatar">م</div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard-content">
+
+            <div class="print-report-header">
+                <h2 id="printReportTitle">تقرير السكن — اللوحة الإدارية QuickData</h2>
+                <p id="printReportMeta">—</p>
+            </div>
+
+            <div class="page-header no-print">
+                <div class="ph-left">
+                    <h2>السكن</h2>
+                    <p>سجل الغرف في مواقع السكن، وأسماء الموظفين، ومحتويات كل غرفة</p>
+                </div>
+                <div class="ph-right"><strong>اليوم</strong><span id="headerDate">جاري التحميل...</span></div>
+            </div>
+
+            <div class="stats-grid no-print">
+                <div class="stat-card"><span class="stat-icon"><i class="bi bi-door-open-fill"></i></span>
+                    <div class="stat-number" id="statRooms">0</div><div class="stat-label">إجمالي الغرف المسجلة</div></div>
+                <div class="stat-card stat-blue"><span class="stat-icon"><i class="bi bi-buildings-fill"></i></span>
+                    <div class="stat-number" id="statHousings">0</div><div class="stat-label">عدد مواقع السكن</div></div>
+                <div class="stat-card stat-green"><span class="stat-icon"><i class="bi bi-people-fill"></i></span>
+                    <div class="stat-number" id="statEmployees">0</div><div class="stat-label">غرف بها موظفون</div></div>
+            </div>
+
+            <div id="errorBanner" class="error-banner">
+                <span><i class="bi bi-exclamation-triangle-fill"></i> حدث خطأ أثناء تحميل بيانات السكن. تأكد من تشغيل admin_schema_step9.sql في Supabase.</span>
+                <button onclick="loadHousingPage()">إعادة المحاولة</button>
+            </div>
+
+            <div class="panel no-print" style="margin-bottom: 20px;">
+                <div class="panel-header"><h5 class="panel-title"><i class="bi bi-plus-circle-fill"></i> إضافة غرفة / سكن</h5></div>
+                <div style="padding: 16px;">
+                    <div class="fgrid" style="grid-template-columns: 1.2fr 0.8fr 1.2fr 2fr auto;">
+                        <div class="form-field"><label for="newHousingName">اسم السكن</label>
+                            <input type="text" id="newHousingName" list="housingSuggestions" placeholder="مثال: الساحلي / الفرقان / الإدارة" />
+                            <datalist id="housingSuggestions"></datalist></div>
+                        <div class="form-field"><label for="newRoomNumber">رقم الغرفة</label>
+                            <input type="text" id="newRoomNumber" placeholder="مثال: 12" /></div>
+                        <div class="form-field"><label for="newEmployeeName">اسم الموظف</label>
+                            <input type="text" id="newEmployeeName" placeholder="اسم الموظف" /></div>
+                        <div class="form-field"><label for="newRoomContents">محتويات الغرفة</label>
+                            <textarea id="newRoomContents" placeholder="مثال: سرير عدد 2، دولاب، مكيف، ثلاجة صغيرة..."></textarea></div>
+                        <button class="btn-action btn-primary" onclick="addHousing()"><i class="bi bi-plus-lg"></i> إضافة</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-bar no-print">
+                <label for="housingFilter"><i class="bi bi-buildings-fill"></i> السكن:</label>
+                <select id="housingFilter" onchange="renderHousingTable()"><option value="">كل المساكن</option></select>
+                <div class="search-wrap">
+                    <input type="text" id="searchInput" placeholder="ابحث بالرقم المسلسل أو اسم السكن أو الغرفة أو الموظف أو المحتويات..." oninput="renderHousingTable()" />
+                    <i class="bi bi-search"></i>
+                </div>
+                <button class="btn-print" onclick="printHousing()"><i class="bi bi-printer-fill"></i> طباعة</button>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h5 class="panel-title"><i class="bi bi-house-door-fill"></i> سجل السكن</h5>
+                    <span class="record-count" id="housingCount">0 سجل</span>
+                </div>
+                <div class="table-wrap">
+                    <table class="table-custom">
+                        <thead><tr><th>رقم مسلسل</th><th>اسم السكن</th><th>رقم الغرفة</th><th>اسم الموظف</th><th>محتويات الغرفة</th><th>إجراءات</th></tr></thead>
+                        <tbody id="housingTableBody"><tr class="empty-state-row"><td colspan="6"><i class="bi bi-hourglass-split"></i>جاري التحميل...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ===== مودال التعديل ===== -->
+            <div class="modal-overlay no-print" id="editModal">
+                <div class="modal-box wide">
+                    <h3><i class="bi bi-pencil-square"></i> تعديل بيانات السكن</h3>
+                    <input type="hidden" id="editId" />
+                    <div class="mf"><label for="editHousingName">اسم السكن</label><input type="text" id="editHousingName" list="housingSuggestions" /></div>
+                    <div class="mf"><label for="editRoomNumber">رقم الغرفة</label><input type="text" id="editRoomNumber" /></div>
+                    <div class="mf"><label for="editEmployeeName">اسم الموظف</label><input type="text" id="editEmployeeName" /></div>
+                    <div class="mf"><label for="editRoomContents">محتويات الغرفة</label><textarea id="editRoomContents" rows="5"></textarea></div>
+                    <div class="modal-actions">
+                        <button class="btn-action" onclick="closeModalById('editModal')">إلغاء</button>
+                        <button class="btn-action btn-primary" onclick="saveHousingEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <footer class="footer-custom">
+        <div class="footer-content">
+            <div class="footer-right">
+                <span class="footer-brand">اللوحة <span>الإدارية</span></span>
+                <span class="footer-divider">|</span>
+                <span class="footer-copy">QuickData — السكن</span>
+            </div>
+            <div class="footer-left"><span class="footer-version">موديول السكن</span></div>
+        </div>
+    </footer>
+
+    <script src="layout.js"></script>
+    <script>
+
+        var housingCache = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var u = initAdminPage({ onRefresh: loadHousingPage });
+            if (!u) return;
+            loadHousingPage();
+        });
+
+        async function loadHousingPage() {
+            var eb = document.getElementById('errorBanner');
+            eb.classList.remove('show');
+            try { await loadHousing(); await loadNotificationsCount(); }
+            catch (e) { console.error(e); eb.classList.add('show'); }
+        }
+
+        async function loadHousing() {
+            var tbody = document.getElementById('housingTableBody');
+            try {
+                housingCache = (await Supabase.fetchData('admin_housing', { order: 'created_at' }) || [])
+                    .sort(function(a, b) { return (a.serial_no || 0) - (b.serial_no || 0); });
+                updateStats();
+                populateNames();
+                renderHousingTable();
+            } catch (e) {
+                console.error(e);
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-exclamation-triangle"></i>تعذّر تحميل بيانات السكن. تأكد من تشغيل admin_schema_step9.sql</td></tr>';
+                throw e;
+            }
+        }
+
+        function uniqueNames() {
+            var n = housingCache.map(function(h) { return h.housing_name; }).filter(Boolean);
+            return n.filter(function(x, i) { return n.indexOf(x) === i; }).sort(function(a, b) { return a.localeCompare(b, 'ar'); });
+        }
+
+        function populateNames() {
+            var names = uniqueNames();
+            var sel = document.getElementById('housingFilter');
+            var cur = sel.value;
+            sel.innerHTML = '<option value="">كل المساكن</option>' + names.map(function(n) {
+                return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
+            }).join('');
+            sel.value = cur;
+            // اقتراحات جاهزة + الأسماء المستخدمة سابقًا
+            var base = ['الساحلي', 'الفرقان', 'الإدارة'];
+            var all = base.concat(names.filter(function(n) { return base.indexOf(n) === -1; }));
+            document.getElementById('housingSuggestions').innerHTML = all.map(function(n) {
+                return '<option value="' + escapeHtml(n) + '"></option>';
+            }).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('statRooms').textContent = housingCache.length;
+            document.getElementById('statHousings').textContent = uniqueNames().length;
+            document.getElementById('statEmployees').textContent = housingCache.filter(function(h) { return (h.employee_name || '').trim(); }).length;
+        }
+
+        function getFiltered() {
+            var hf = document.getElementById('housingFilter').value;
+            var term = document.getElementById('searchInput').value.trim().toLowerCase();
+            return housingCache.filter(function(h) {
+                if (hf && h.housing_name !== hf) return false;
+                if (!term) return true;
+                var hay = [h.serial_no, h.housing_name, h.room_number, h.employee_name, h.room_contents].join(' ').toLowerCase();
+                return hay.indexOf(term) !== -1;
+            });
+        }
+
+        function renderHousingTable() {
+            var tbody = document.getElementById('housingTableBody');
+            var list = getFiltered();
+            document.getElementById('housingCount').textContent = list.length + ' سجل' + (list.length !== housingCache.length ? ' (من ' + housingCache.length + ')' : '');
+            if (!list.length) {
+                tbody.innerHTML = '<tr class="empty-state-row"><td colspan="6"><i class="bi bi-inbox"></i>' + (housingCache.length ? 'لا توجد نتائج مطابقة' : 'لا توجد بيانات سكن بعد') + '</td></tr>';
+                return;
+            }
+            tbody.innerHTML = list.map(function(h) {
+                return '<tr>' +
+                    '<td>' + escapeHtml(h.serial_no) + '</td>' +
+                    '<td>' + escapeHtml(h.housing_name) + '</td>' +
+                    '<td>' + escapeHtml(h.room_number || '—') + '</td>' +
+                    '<td>' + escapeHtml(h.employee_name || '—') + '</td>' +
+                    '<td class="pre-cell">' + escapeHtml(h.room_contents || '—') + '</td>' +
+                    '<td><div class="row-actions">' +
+                        '<button class="btn-icon btn-icon-edit" title="تعديل" onclick="openEdit(\'' + h.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                        '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteHousing(\'' + h.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                    '</div></td></tr>';
+            }).join('');
+        }
+
+        async function addHousing() {
+            var name = document.getElementById('newHousingName').value.trim();
+            if (!name) { showToast('اكتب اسم السكن أولاً', 'warning'); return; }
+            try {
+                await Supabase.addData('admin_housing', {
+                    housing_name: name,
+                    room_number: document.getElementById('newRoomNumber').value.trim() || null,
+                    employee_name: document.getElementById('newEmployeeName').value.trim() || null,
+                    room_contents: document.getElementById('newRoomContents').value.trim() || null
+                });
+                ['newRoomNumber', 'newEmployeeName', 'newRoomContents'].forEach(function(id) { document.getElementById(id).value = ''; });
+                showToast('تمت الإضافة بنجاح', 'success');
+                await loadHousing();
+            } catch (e) { console.error(e); showToast('فشلت الإضافة', 'error'); }
+        }
+
+        function openEdit(id) {
+            var h = housingCache.find(function(x) { return x.id === id; });
+            if (!h) return;
+            document.getElementById('editId').value = h.id;
+            document.getElementById('editHousingName').value = h.housing_name || '';
+            document.getElementById('editRoomNumber').value = h.room_number || '';
+            document.getElementById('editEmployeeName').value = h.employee_name || '';
+            document.getElementById('editRoomContents').value = h.room_contents || '';
+            openModalById('editModal');
+        }
+
+        async function saveHousingEdit() {
+            var id = document.getElementById('editId').value;
+            var name = document.getElementById('editHousingName').value.trim();
+            if (!name) { showToast('اسم السكن مطلوب', 'warning'); return; }
+            try {
+                await Supabase.updateData('admin_housing', id, {
+                    housing_name: name,
+                    room_number: document.getElementById('editRoomNumber').value.trim() || null,
+                    employee_name: document.getElementById('editEmployeeName').value.trim() || null,
+                    room_contents: document.getElementById('editRoomContents').value.trim() || null,
+                    updated_at: new Date().toISOString()
+                });
+                closeModalById('editModal');
+                showToast('تم حفظ التعديل', 'success');
+                await loadHousing();
+            } catch (e) { console.error(e); showToast('فشل حفظ التعديل', 'error'); }
+        }
+
+        async function deleteHousing(id) {
+            if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) return;
+            try {
+                await Supabase.deleteData('admin_housing', id);
+                showToast('تم الحذف', 'success');
+                await loadHousing();
+            } catch (e) { console.error(e); showToast('فشل الحذف', 'error'); }
+        }
+
+        function printHousing() {
+            var hf = document.getElementById('housingFilter').value;
+            var now = new Date();
+            document.getElementById('printReportTitle').textContent = 'تقرير السكن' + (hf ? ' — ' + hf : '') + ' — اللوحة الإدارية QuickData';
+            document.getElementById('printReportMeta').textContent = 'عدد السجلات: ' + getFiltered().length + ' | تاريخ إصدار التقرير: ' + now.toLocaleDateString('ar-EG') + ' — ' + now.toLocaleTimeString('ar-EG');
+            window.print();
+        }
+
+
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+        async function loadNotificationsCount() {
+            try {
+                var unread = await Supabase.fetchData('admin_notifications', { filter: { is_read: 'false' } });
+                document.getElementById('notifDot').classList.toggle('show', (unread || []).length > 0);
+            } catch (e) { console.error(e); }
+        }
+        document.getElementById('notifBtn').addEventListener('click', async function() {
+            try {
+                var n = await Supabase.fetchData('admin_notifications', { order: 'created_at', limit: 5 });
+                if (!n || !n.length) { showToast('لا توجد إشعارات حاليًا', 'info'); return; }
+                showToast('🔔 ' + n[0].title, n[0].level === 'danger' ? 'error' : (n[0].level === 'warning' ? 'warning' : 'info'));
+            } catch (e) { console.error(e); }
+        });
+
+    </script>
+</body>
+</html>

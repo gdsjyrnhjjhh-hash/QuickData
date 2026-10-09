@@ -69,6 +69,33 @@
             .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
             table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
         }
+
+        .sheet-switch { display: flex; gap: 8px; margin-bottom: 18px; }
+        .sheet-btn {
+            padding: 10px 22px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-secondary); font-weight: 700; font-size: 13.5px;
+            display: flex; align-items: center; gap: 8px; transition: var(--t-base);
+        }
+        .sheet-btn.active { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+        .note-form { padding: 16px; }
+        .note-form input[type="text"], .note-form textarea, .modal-box.wide textarea {
+            width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            font-family: var(--font-body); font-size: 13.5px; background: var(--surface); color: var(--text);
+        }
+        .note-form textarea, .modal-box.wide textarea { min-height: 180px; resize: vertical; line-height: 1.9; }
+        .note-form label { display:block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin: 10px 0 4px; }
+        .note-form input:focus, .note-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(139,122,75,0.08); }
+        .note-card { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; margin: 12px 16px; background: var(--surface); }
+        .note-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .note-card-head strong { font-size: 14.5px; }
+        .note-card-head small { color: var(--text-tertiary); font-size: 11px; }
+        .note-content { white-space: pre-wrap; line-height: 1.9; font-size: 13.5px; }
+        .row-actions { display: flex; gap: 6px; }
+        .modal-box.wide { max-width: 720px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .other-search { position: relative; margin: 0 16px 6px; }
+        .other-search input { width: 100%; padding: 7px 34px 7px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 12.5px; background: var(--surface); color: var(--text); height: 34px; }
+        .other-search i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-size: 13px; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -101,6 +128,8 @@
                 <li><a href="purchases.html"><i class="bi bi-cart-fill"></i> المشتريات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="handovers.html"><i class="bi bi-box-seam-fill"></i> استلام وتسليم الأعمال <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="correspondence.html"><i class="bi bi-send-fill"></i> التواصل بين الإدارات <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="housing.html"><i class="bi bi-house-door-fill"></i> السكن <span class="sidebar-badge">جديد</span></a></li>
+                <li><a href="fines.html"><i class="bi bi-cone-striped"></i> مخالفات السيارات <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="ideas.html" class="active"><i class="bi bi-lightbulb-fill"></i> تطوير الأفكار <span class="sidebar-badge">جديد</span></a></li>
                 <li><a href="support.html"><i class="bi bi-headset"></i> التواصل والدعم الفني</a></li>
             </ul>
@@ -170,6 +199,12 @@
                 </div>
             </div>
 
+            <div class="sheet-switch no-print">
+                <button class="sheet-btn active" id="sheetBtnIdeas" onclick="switchSheet('ideas')"><i class="bi bi-lightbulb-fill"></i> الأفكار</button>
+                <button class="sheet-btn" id="sheetBtnOther" onclick="switchSheet('other')"><i class="bi bi-journal-text"></i> أخرى</button>
+            </div>
+
+            <div id="sheetIdeas">
             <div class="stats-grid no-print">
                 <div class="stat-card stat-blue">
                     <span class="stat-icon"><i class="bi bi-stars"></i></span>
@@ -266,6 +301,34 @@
                 </div>
             </div>
 
+            </div><!-- /sheetIdeas -->
+
+            <!-- ================= الشيت 2: أخرى ================= -->
+            <div id="sheetOther" style="display:none;">
+                <div class="panel no-print" style="margin-bottom: 20px;">
+                    <div class="panel-header"><h5 class="panel-title"><i class="bi bi-journal-plus"></i> ورقة عمل جديدة (أخرى)</h5></div>
+                    <div class="note-form">
+                        <label for="newNoteTitle" style="margin-top:0">الموضوع</label>
+                        <input type="text" id="newNoteTitle" placeholder="مثال: اتفاق مع شركة تسويق / شركة حقل / شركة برمجة" />
+                        <label for="newNoteContent">اكتب كل ما تريد (بدون حد للكتابة)</label>
+                        <textarea id="newNoteContent" placeholder="اكتب هنا بحرية: تفاصيل الاتفاق، النقاط، المواعيد، الملاحظات..."></textarea>
+                        <div style="margin-top:12px;"><button class="btn-action btn-primary" onclick="addNote()"><i class="bi bi-plus-lg"></i> حفظ ورقة العمل</button></div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h5 class="panel-title"><i class="bi bi-journal-text"></i> أوراق العمل</h5>
+                        <span class="record-count" id="notesCount">0 ورقة</span>
+                    </div>
+                    <div class="other-search no-print">
+                        <input type="text" id="noteSearch" placeholder="ابحث في العناوين والمحتوى..." oninput="renderNotes()" />
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <div id="notesList"><div class="empty-state-row" style="padding:24px;text-align:center;">جاري التحميل...</div></div>
+                </div>
+            </div>
+
         </div>
 
     </main>
@@ -282,6 +345,20 @@
             </div>
         </div>
     </footer>
+
+    <!-- ===== مودال تعديل ورقة العمل ===== -->
+    <div class="modal-overlay no-print" id="noteEditModal">
+        <div class="modal-box wide">
+            <h3><i class="bi bi-pencil-square"></i> تعديل ورقة العمل</h3>
+            <input type="hidden" id="editNoteId" />
+            <div class="mf"><label for="editNoteTitle">الموضوع</label><input type="text" id="editNoteTitle" /></div>
+            <div class="mf"><label for="editNoteContent">المحتوى</label><textarea id="editNoteContent" rows="14"></textarea></div>
+            <div class="modal-actions">
+                <button class="btn-action" onclick="closeModalById('noteEditModal')">إلغاء</button>
+                <button class="btn-action btn-primary" onclick="saveNoteEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+            </div>
+        </div>
+    </div>
 
     <script src="layout.js"></script>
 
@@ -487,6 +564,117 @@
 
         function notifySoon(moduleName) {
             showToast('📦 موديول "' + moduleName + '" هيتم بناؤه في إحدى الخطوات القادمة', 'info');
+        }
+
+        // ================================================================
+        // الشيت 2 — "أخرى": أوراق عمل حرة (admin_other_notes)
+        // ================================================================
+        var notesCache = [];
+        var notesLoaded = false;
+
+        function switchSheet(which) {
+            document.getElementById('sheetIdeas').style.display = which === 'ideas' ? '' : 'none';
+            document.getElementById('sheetOther').style.display = which === 'other' ? '' : 'none';
+            document.getElementById('sheetBtnIdeas').classList.toggle('active', which === 'ideas');
+            document.getElementById('sheetBtnOther').classList.toggle('active', which === 'other');
+            if (which === 'other' && !notesLoaded) loadNotes();
+        }
+
+        async function loadNotes() {
+            var list = document.getElementById('notesList');
+            try {
+                notesCache = await Supabase.fetchData('admin_other_notes', { order: 'created_at' }) || [];
+                notesLoaded = true;
+                renderNotes();
+            } catch (error) {
+                console.error(error);
+                list.innerHTML = '<div style="padding:24px;text-align:center;">تعذّر تحميل أوراق العمل. تأكد من تشغيل admin_schema_step9.sql في Supabase.</div>';
+            }
+        }
+
+        function renderNotes() {
+            var list = document.getElementById('notesList');
+            var term = document.getElementById('noteSearch').value.trim().toLowerCase();
+            var items = notesCache.filter(function(n) {
+                return !term || ((n.title || '') + ' ' + (n.content || '')).toLowerCase().indexOf(term) !== -1;
+            });
+            document.getElementById('notesCount').textContent = items.length + ' ورقة';
+            if (!items.length) {
+                list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-tertiary);">' + (notesCache.length ? 'لا توجد نتائج مطابقة' : 'لا توجد أوراق عمل بعد') + '</div>';
+                return;
+            }
+            list.innerHTML = items.map(function(n) {
+                var d = n.updated_at || n.created_at;
+                var dStr = d ? new Date(d).toLocaleDateString('ar-EG') : '';
+                return '<div class="note-card">' +
+                    '<div class="note-card-head"><div><strong>' + escapeHtml(n.title) + '</strong> <small>' + dStr + '</small></div>' +
+                    '<div class="row-actions no-print">' +
+                        '<button class="btn-icon btn-icon-edit" title="تعديل" onclick="openNoteEdit(\'' + n.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                        '<button class="btn-icon btn-icon-edit" title="طباعة" onclick="printNote(\'' + n.id + '\')"><i class="bi bi-printer-fill"></i></button>' +
+                        '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteNote(\'' + n.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                    '</div></div>' +
+                    '<div class="note-content">' + escapeHtml(n.content || '') + '</div></div>';
+            }).join('');
+        }
+
+        async function addNote() {
+            var title = document.getElementById('newNoteTitle').value.trim();
+            var content = document.getElementById('newNoteContent').value;
+            if (!title) { showToast('اكتب الموضوع أولاً', 'warning'); return; }
+            try {
+                await Supabase.addData('admin_other_notes', { title: title, content: content });
+                document.getElementById('newNoteTitle').value = '';
+                document.getElementById('newNoteContent').value = '';
+                showToast('تم حفظ ورقة العمل', 'success');
+                await loadNotes();
+            } catch (error) { console.error(error); showToast('فشل الحفظ', 'error'); }
+        }
+
+        function openNoteEdit(id) {
+            var n = notesCache.find(function(x) { return x.id === id; });
+            if (!n) return;
+            document.getElementById('editNoteId').value = n.id;
+            document.getElementById('editNoteTitle').value = n.title || '';
+            document.getElementById('editNoteContent').value = n.content || '';
+            openModalById('noteEditModal');
+        }
+
+        async function saveNoteEdit() {
+            var id = document.getElementById('editNoteId').value;
+            var title = document.getElementById('editNoteTitle').value.trim();
+            if (!title) { showToast('الموضوع مطلوب', 'warning'); return; }
+            try {
+                await Supabase.updateData('admin_other_notes', id, {
+                    title: title,
+                    content: document.getElementById('editNoteContent').value,
+                    updated_at: new Date().toISOString()
+                });
+                closeModalById('noteEditModal');
+                showToast('تم حفظ التعديل', 'success');
+                await loadNotes();
+            } catch (error) { console.error(error); showToast('فشل حفظ التعديل', 'error'); }
+        }
+
+        async function deleteNote(id) {
+            if (!confirm('هل أنت متأكد من حذف ورقة العمل هذه؟')) return;
+            try {
+                await Supabase.deleteData('admin_other_notes', id);
+                showToast('تم الحذف', 'success');
+                await loadNotes();
+            } catch (error) { console.error(error); showToast('فشل الحذف', 'error'); }
+        }
+
+        function printNote(id) {
+            var n = notesCache.find(function(x) { return x.id === id; });
+            if (!n) return;
+            var w = window.open('', '_blank');
+            if (!w) { showToast('اسمح بالنوافذ المنبثقة للطباعة', 'warning'); return; }
+            w.document.write('<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>' + escapeHtml(n.title) + '</title>' +
+                '<style>body{font-family:Cairo,Arial,sans-serif;padding:40px;line-height:2;font-size:15px}h2{border-bottom:1px solid #999;padding-bottom:8px}pre{white-space:pre-wrap;font-family:inherit}</style></head><body>' +
+                '<h2>' + escapeHtml(n.title) + '</h2><pre>' + escapeHtml(n.content || '') + '</pre></body></html>');
+            w.document.close();
+            w.focus();
+            setTimeout(function() { w.print(); }, 300);
         }
 
         function escapeHtml(str) {
