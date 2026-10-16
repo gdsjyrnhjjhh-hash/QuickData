@@ -630,3 +630,6 @@ body.pdf-capture .panel { box-shadow: none !important; border: 1px solid #ccc !i
 body.pdf-capture table.table-custom th:last-child, body.pdf-capture table.table-custom td:last-child { display: none; }
 body.pdf-capture .status-select { display: none !important; }
 body.pdf-capture .print-only-status { display: inline !important; }
+
+/* إصلاح PDF: letter-spacing (زي اللي على رؤوس الجداول) بيفكّ اتصال الحروف العربية في html2canvas */
+body.pdf-capture, body.pdf-capture * { letter-spacing: 0 !important; text-transform: none !important; font-variant-ligatures: normal !important; }
