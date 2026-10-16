@@ -615,3 +615,18 @@ body:not(.no-vivid-text) .main-content .btn-primary,
 body:not(.no-vivid-text) .main-content .btn-primary i { color: var(--text-inverse) !important; }
 body.dark-mode:not(.no-vivid-text) .main-content .btn-primary,
 body.dark-mode:not(.no-vivid-text) .main-content .btn-primary i { color: var(--text) !important; }
+
+/* ===== وضع التقاط PDF: نفس قواعد الطباعة، بيتفعّل مؤقتًا وقت تصدير PDF ===== */
+body.pdf-capture { background: #fff !important; }
+body.pdf-capture .sidebar, body.pdf-capture .sidebar-overlay, body.pdf-capture .navbar-custom,
+body.pdf-capture .footer-custom, body.pdf-capture .no-print, body.pdf-capture #errorBanner,
+body.pdf-capture .modal-overlay, body.pdf-capture .toast-notification { display: none !important; }
+body.pdf-capture .main-content { margin: 0 !important; padding: 0 !important; }
+body.pdf-capture .dashboard-content { padding: 0 !important; background: #fff !important; }
+body.pdf-capture .print-report-header { display: block !important; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #333; }
+body.pdf-capture .print-report-header h2 { font-size: 20px; margin-bottom: 4px; color: #111 !important; }
+body.pdf-capture .print-report-header p { font-size: 12px; color: #555 !important; }
+body.pdf-capture .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
+body.pdf-capture table.table-custom th:last-child, body.pdf-capture table.table-custom td:last-child { display: none; }
+body.pdf-capture .status-select { display: none !important; }
+body.pdf-capture .print-only-status { display: inline !important; }
