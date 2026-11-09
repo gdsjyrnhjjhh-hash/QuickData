@@ -345,7 +345,12 @@
             <div class="mf"><label for="editPlate">رقم اللوحة</label><input type="text" id="editPlate" /></div>
             <div class="mf"><label for="editCarType">نوع السيارة</label><input type="text" id="editCarType" /></div>
             <div class="mf"><label for="editChassis">رقم الهيكل</label><input type="text" id="editChassis" /></div>
+            <div class="mf"><label for="editVehicleBranch">الفرع</label>
+                <select id="editVehicleBranch"><option value="">— بدون فرع —</option></select></div>
             <div class="mf"><label for="editSequence">الرقم التسلسلي</label><input type="text" id="editSequence" /></div>
+            <div class="mf"><label for="editLicenseExpiry">انتهاء الاستمارة</label><input type="date" id="editLicenseExpiry" /></div>
+            <div class="mf"><label for="editInspectionExpiry">انتهاء الفحص</label><input type="date" id="editInspectionExpiry" /></div>
+            <div class="mf"><label for="editInsuranceExpiry">انتهاء التأمين</label><input type="date" id="editInsuranceExpiry" /></div>
             <div class="mf"><label for="editStatusOther">ملاحظة الحالة (تظهر عند اختيار "أخرى")</label><input type="text" id="editStatusOther" /></div>
             <div class="modal-actions">
                 <button class="btn-action" onclick="closeModalById('vehicleEditModal')">إلغاء</button>
@@ -640,7 +645,12 @@
             document.getElementById('editPlate').value = v.plate_number || '';
             document.getElementById('editCarType').value = v.car_type || '';
             document.getElementById('editChassis').value = v.chassis_number || '';
+            document.getElementById('editVehicleBranch').innerHTML = document.getElementById('newBranch').innerHTML;
+            document.getElementById('editVehicleBranch').value = v.branch_id || '';
             document.getElementById('editSequence').value = v.sequence_number || '';
+            document.getElementById('editLicenseExpiry').value = v.license_expiry || '';
+            document.getElementById('editInspectionExpiry').value = v.inspection_expiry || '';
+            document.getElementById('editInsuranceExpiry').value = v.insurance_expiry || '';
             document.getElementById('editStatusOther').value = v.status_other || '';
             openModalById('vehicleEditModal');
         }
@@ -656,6 +666,10 @@
                     car_type: type,
                     chassis_number: document.getElementById('editChassis').value.trim() || null,
                     sequence_number: document.getElementById('editSequence').value.trim() || null,
+                    branch_id: document.getElementById('editVehicleBranch').value || null,
+                    license_expiry: document.getElementById('editLicenseExpiry').value || null,
+                    inspection_expiry: document.getElementById('editInspectionExpiry').value || null,
+                    insurance_expiry: document.getElementById('editInsuranceExpiry').value || null,
                     status_other: document.getElementById('editStatusOther').value.trim() || null,
                     updated_at: new Date().toISOString()
                 });

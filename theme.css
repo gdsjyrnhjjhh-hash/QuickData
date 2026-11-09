@@ -654,3 +654,36 @@ body.dept-filtered-report .stats-grid, body.dept-filtered-report .tabs-bar { dis
 body:not(.no-vivid-text) .dept-dlg-box .btn-primary, body:not(.no-vivid-text) .dept-dlg-box .btn-primary i { color: var(--text-inverse) !important; }
 body.dark-mode:not(.no-vivid-text) .dept-dlg-box .btn-primary, body.dark-mode:not(.no-vivid-text) .dept-dlg-box .btn-primary i { color: var(--text) !important; }
 @media print { .dept-dlg-overlay { display: none !important; } }
+
+/* ===== تنسيق موحّد لكل نماذج الإضافة: الحقول بتتوزع تلقائيًا على عرض الصفحة
+   (كانت أعمدة ثابتة ضيّقة بتخلّي الحقول متلخبطة والمساحة مهدرة) ===== */
+.main-content .vehicle-form-grid, .main-content .contract-form-grid, .main-content .correspondence-form-grid,
+.main-content .handover-form-grid, .main-content .idea-form-grid, .main-content .task-form-grid,
+.main-content .form-grid, .main-content .form-grid.purchases-grid, .main-content .form-grid.suppliers-grid,
+.main-content .form-grid.offers-grid, .main-content .fgrid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+    gap: 12px 14px !important;
+    align-items: end !important;
+}
+.main-content .vehicle-form-grid .form-field, .main-content .contract-form-grid .form-field,
+.main-content .correspondence-form-grid .form-field, .main-content .handover-form-grid .form-field,
+.main-content .idea-form-grid .form-field, .main-content .task-form-grid .form-field,
+.main-content .form-grid .form-field, .main-content .fgrid .form-field { min-width: 0; }
+.main-content .vehicle-form-grid label, .main-content .contract-form-grid label, .main-content .correspondence-form-grid label,
+.main-content .handover-form-grid label, .main-content .idea-form-grid label, .main-content .task-form-grid label,
+.main-content .form-grid label, .main-content .fgrid label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.main-content .vehicle-form-grid input, .main-content .vehicle-form-grid select,
+.main-content .contract-form-grid input, .main-content .contract-form-grid select,
+.main-content .correspondence-form-grid input, .main-content .correspondence-form-grid select,
+.main-content .handover-form-grid input:not([type=checkbox]), .main-content .handover-form-grid select,
+.main-content .idea-form-grid input, .main-content .idea-form-grid select,
+.main-content .task-form-grid input, .main-content .task-form-grid select,
+.main-content .form-grid input, .main-content .form-grid select { width: 100%; min-width: 0; }
+.main-content .fgrid .form-field:has(textarea) { grid-column: span 2; }
+.main-content .vehicle-form-grid > .btn-action, .main-content .contract-form-grid > .btn-action,
+.main-content .correspondence-form-grid > .btn-action, .main-content .handover-form-grid > .btn-action,
+.main-content .idea-form-grid > .btn-action, .main-content .task-form-grid > .btn-action,
+.main-content .form-grid > .btn-action, .main-content .fgrid > .btn-action {
+    justify-self: start; min-height: 36px; padding-inline: 22px; justify-content: center;
+}
