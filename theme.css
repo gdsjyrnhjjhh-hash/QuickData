@@ -633,3 +633,24 @@ body.pdf-capture .print-only-status { display: inline !important; }
 
 /* إصلاح PDF: letter-spacing (زي اللي على رؤوس الجداول) بيفكّ اتصال الحروف العربية في html2canvas */
 body.pdf-capture, body.pdf-capture * { letter-spacing: 0 !important; text-transform: none !important; font-variant-ligatures: normal !important; }
+
+/* ===== فلتر الأقسام قبل الطباعة / PDF ===== */
+.dept-hidden { display: none !important; }
+body.dept-filtered-report .stats-grid, body.dept-filtered-report .tabs-bar { display: none !important; }
+.dept-dlg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dept-dlg-box { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-md, 10px); width: 100%; max-width: 440px; max-height: 88vh; overflow: auto; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); }
+.dept-dlg-box h3 { font-size: 16px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.dept-dlg-sub { font-size: 12.5px; color: var(--text-secondary); margin-bottom: 12px; }
+.dept-dlg-tools { display: flex; gap: 14px; margin-bottom: 8px; font-size: 12px; }
+.dept-dlg-tools a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.dept-dlg-list { border: 1px solid var(--border); border-radius: var(--radius-sm); max-height: 280px; overflow: auto; }
+.dept-dlg-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13.5px; }
+.dept-dlg-item:last-child { border-bottom: 0; }
+.dept-dlg-item:hover { background: var(--bg); }
+.dept-dlg-item span { flex: 1; }
+.dept-dlg-item em { font-style: normal; font-size: 11px; background: var(--bg); color: var(--text-tertiary); padding: 1px 8px; border-radius: 999px; }
+.dept-dlg-sep { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 12.5px; cursor: pointer; }
+.dept-dlg-actions { display: flex; justify-content: flex-start; gap: 8px; margin-top: 16px; }
+body:not(.no-vivid-text) .dept-dlg-box .btn-primary, body:not(.no-vivid-text) .dept-dlg-box .btn-primary i { color: var(--text-inverse) !important; }
+body.dark-mode:not(.no-vivid-text) .dept-dlg-box .btn-primary, body.dark-mode:not(.no-vivid-text) .dept-dlg-box .btn-primary i { color: var(--text) !important; }
+@media print { .dept-dlg-overlay { display: none !important; } }

@@ -270,30 +270,166 @@ function injectPdfButtons() {
     });
 }
 
+// ---------------- فلتر الأقسام قبل الطباعة / PDF ----------------
+// بيدوّر في الجدول الظاهر على عمود: القسم، وإلا الجهة، وإلا الفرع، وإلا اسم السكن
+var DEPT_HEADER_PRIORITY = ['القسم', 'الجهة', 'الفرع', 'اسم السكن'];
+
+function _deptEsc(str) {
+    return String(str === null || str === undefined ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function clearDeptFilter() {
+    document.querySelectorAll('.dept-hidden').forEach(function(tr) { tr.classList.remove('dept-hidden'); });
+    document.body.classList.remove('dept-filtered-report');
+}
+
+// بيرجّع null لو مفيش عمود أقسام أو مفيش غير قسم واحد (يعني مفيش داعي للفلتر)
+function collectDeptInfo() {
+    var tables = Array.prototype.filter.call(document.querySelectorAll('.dashboard-content table'), function(t) {
+        return t.offsetParent !== null && !t.closest('.modal-overlay');
+    });
+    var items = [], label = null, counts = {};
+    tables.forEach(function(table) {
+        var ths = Array.prototype.map.call(table.querySelectorAll('thead th'), function(th) { return th.textContent.trim(); });
+        var idx = -1, lbl = null;
+        for (var p = 0; p < DEPT_HEADER_PRIORITY.length && idx === -1; p++) {
+            for (var i = 0; i < ths.length; i++) {
+                if (ths[i].indexOf(DEPT_HEADER_PRIORITY[p]) !== -1) { idx = i; lbl = ths[i]; break; }
+            }
+        }
+        if (idx === -1) return;
+        if (!label) label = lbl;
+        Array.prototype.forEach.call(table.querySelectorAll('tbody tr'), function(tr) {
+            if (tr.offsetParent === null || tr.querySelector('td[colspan]') || tr.children.length <= idx) return;
+            var v = (tr.children[idx].textContent || '').replace(/\s+/g, ' ').trim();
+            if (!v || v === '—' || v === '-') v = 'بدون تحديد';
+            items.push({ tr: tr, value: v });
+            counts[v] = (counts[v] || 0) + 1;
+        });
+    });
+    if (!label || Object.keys(counts).length < 2) return null;
+    return { label: label, items: items, counts: counts };
+}
+
+function askDeptDialog(info, mode) {
+    return new Promise(function(resolve) {
+        var old = document.getElementById('deptDlgOverlay');
+        if (old) old.remove();
+        var names = Object.keys(info.counts).sort(function(a, b) { return a.localeCompare(b, 'ar'); });
+        var ov = document.createElement('div');
+        ov.id = 'deptDlgOverlay';
+        ov.className = 'dept-dlg-overlay';
+        ov.innerHTML =
+            '<div class="dept-dlg-box" role="dialog" aria-modal="true">' +
+                '<h3><i class="bi bi-funnel-fill"></i> اختر ما تريد ' + (mode === 'pdf' ? 'تصديره PDF' : 'طباعته') + '</h3>' +
+                '<p class="dept-dlg-sub">التصفية حسب: <strong>' + _deptEsc(info.label) + '</strong> — اللي مش هتختاره مش هيظهر في التقرير.</p>' +
+                '<div class="dept-dlg-tools"><a href="#" data-act="all">تحديد الكل</a><a href="#" data-act="none">إلغاء التحديد</a></div>' +
+                '<div class="dept-dlg-list">' +
+                names.map(function(n, i) {
+                    return '<label class="dept-dlg-item"><input type="checkbox" value="' + i + '" checked /> <span>' + _deptEsc(n) + '</span><em>' + info.counts[n] + '</em></label>';
+                }).join('') +
+                '</div>' +
+                (mode === 'pdf' ? '<label class="dept-dlg-sep"><input type="checkbox" id="deptSeparate" /> ملف PDF منفصل لكل اختيار</label>' : '') +
+                '<div class="dept-dlg-actions">' +
+                    '<button type="button" class="btn-action" data-act="cancel">إلغاء</button>' +
+                    '<button type="button" class="btn-action btn-primary" data-act="ok"><i class="bi bi-check-lg"></i> متابعة</button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(ov);
+
+        function boxes() { return Array.prototype.slice.call(ov.querySelectorAll('.dept-dlg-item input')); }
+        function close(val) { document.removeEventListener('keydown', onKey); ov.remove(); resolve(val); }
+        function onKey(e) { if (e.key === 'Escape') close(false); }
+        document.addEventListener('keydown', onKey);
+        ov.addEventListener('click', function(e) {
+            if (e.target === ov) { close(false); return; }
+            var a = e.target.closest('[data-act]');
+            if (!a) return;
+            var act = a.getAttribute('data-act');
+            if (act === 'all' || act === 'none') { e.preventDefault(); boxes().forEach(function(b) { b.checked = act === 'all'; }); }
+            else if (act === 'cancel') close(false);
+            else if (act === 'ok') {
+                var picked = boxes().filter(function(b) { return b.checked; }).map(function(b) { return names[+b.value]; });
+                if (!picked.length) { showToast('اختر عنصر واحد على الأقل', 'warning'); return; }
+                var sepEl = document.getElementById('deptSeparate');
+                var separate = !!(sepEl && sepEl.checked && picked.length > 1);
+                close({ depts: (picked.length === names.length && !separate) ? null : picked, separate: separate });
+            }
+        });
+    });
+}
+
+function applyDeptFilter(info, depts) {
+    clearDeptFilter();
+    if (!info || !depts) return;
+    info.items.forEach(function(it) { it.tr.classList.toggle('dept-hidden', depts.indexOf(it.value) === -1); });
+    document.body.classList.add('dept-filtered-report');
+}
+
+function patchReportHeader(info, depts) {
+    if (!info || !depts) return;
+    var h = document.querySelector('.print-report-header h2');
+    var m = document.querySelector('.print-report-header p');
+    var visible = info.items.filter(function(it) { return depts.indexOf(it.value) !== -1; }).length;
+    if (h) h.textContent = h.textContent.replace(/\s*\|\s*.*$/, '') + ' — ' + info.label + ': ' + depts.join('، ');
+    if (m) m.textContent = m.textContent.replace(/(عدد[^:|]*:\s*)[0-9٠-٩]+/, '$1' + visible);
+}
+
+// ---------------- طباعة عادية (مع فلتر الأقسام) ----------------
+function printWithDepts(printBtn, info, depts) {
+    applyDeptFilter(info, depts);
+    var orig = window.print, called = false;
+    window.print = function() {
+        window.print = orig;
+        called = true;
+        patchReportHeader(info, depts);
+        try { orig.call(window); } finally { clearDeptFilter(); }
+    };
+    printBtn.dataset.deptConfirmed = '1';
+    try { printBtn.click(); }
+    finally {
+        delete printBtn.dataset.deptConfirmed;
+        window.print = orig;
+        if (!called) clearDeptFilter();
+    }
+}
+
+async function runPrintFlow(printBtn) {
+    var info = collectDeptInfo();
+    var choice = info ? await askDeptDialog(info, 'print') : { depts: null, separate: false };
+    if (!choice) return;
+    printWithDepts(printBtn, info, choice.depts);
+}
+
+// أي ضغطة على زر "طباعة" بتعدّي على نافذة اختيار القسم الأول
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest && e.target.closest('.btn-print');
+    if (!btn || btn.classList.contains('btn-pdf') || btn.dataset.deptConfirmed) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    runPrintFlow(btn);
+}, true);
+
+// ---------------- PDF ----------------
 var _pdfBusy = false;
-async function exportReportPDF(printBtn) {
-    if (_pdfBusy) return;
-    _pdfBusy = true;
-    showToast('جاري تجهيز ملف PDF...', 'info');
-    var wasDark = document.body.classList.contains('dark-mode');
+
+async function exportOnePDF(printBtn, info, depts) {
+    applyDeptFilter(info, depts);
     var origPrint = window.print;
+    window.print = function() {};
+    printBtn.dataset.deptConfirmed = '1';
+    try { printBtn.click(); } catch (e) { console.error(e); }
+    delete printBtn.dataset.deptConfirmed;
+    window.print = origPrint;
+    patchReportHeader(info, depts);
+
+    var header = document.querySelector('.print-report-header h2');
+    var title = (header && header.textContent.trim()) || document.title;
+    var fileName = title.replace(/[\\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim().slice(0, 120) + ' - ' + new Date().toISOString().slice(0, 10) + '.pdf';
+
+    document.body.classList.add('pdf-capture');
+    window.scrollTo(0, 0);
     try {
-        await loadScriptOnce(HTML2PDF_URL);
-
-        // نشغّل دالة الطباعة الأصلية للصفحة (بتجهّز عنوان التقرير) لكن نمنع نافذة الطباعة
-        window.print = function() {};
-        try { printBtn.click(); } catch (e) { console.error(e); }
-        window.print = origPrint;
-
-        var header = document.querySelector('.print-report-header h2');
-        var title = (header && header.textContent.trim()) || document.title;
-        var fileName = title.replace(/[\\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim() + ' - ' + new Date().toISOString().slice(0, 10) + '.pdf';
-
-        if (wasDark) document.body.classList.remove('dark-mode');
-        document.body.classList.add('pdf-capture');
-        window.scrollTo(0, 0);
-
-        var el = document.querySelector('.dashboard-content');
         await html2pdf().set({
             margin: [8, 8, 8, 8],
             filename: fileName,
@@ -301,14 +437,41 @@ async function exportReportPDF(printBtn) {
             html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, windowWidth: 1280 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
             pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.stat-card'] }
-        }).from(el).save();
-        showToast('✅ تم إنشاء ملف PDF', 'success');
+        }).from(document.querySelector('.dashboard-content')).save();
+    } finally {
+        document.body.classList.remove('pdf-capture');
+        clearDeptFilter();
+    }
+}
+
+async function exportReportPDF(printBtn) {
+    if (_pdfBusy) return;
+    _pdfBusy = true;
+    var wasDark = document.body.classList.contains('dark-mode');
+    var origPrint = window.print;
+    try {
+        clearDeptFilter();
+        var info = collectDeptInfo();
+        var choice = info ? await askDeptDialog(info, 'pdf') : { depts: null, separate: false };
+        if (!choice) return;
+
+        showToast('جاري تجهيز ملف PDF...', 'info');
+        await loadScriptOnce(HTML2PDF_URL);
+        if (wasDark) document.body.classList.remove('dark-mode');
+
+        var jobs = (choice.separate && choice.depts) ? choice.depts.map(function(d) { return [d]; }) : [choice.depts];
+        for (var i = 0; i < jobs.length; i++) {
+            await exportOnePDF(printBtn, info, jobs[i]);
+            if (i < jobs.length - 1) await new Promise(function(r) { setTimeout(r, 700); });
+        }
+        showToast(jobs.length > 1 ? '✅ تم إنشاء ' + jobs.length + ' ملفات PDF' : '✅ تم إنشاء ملف PDF', 'success');
     } catch (e) {
         console.error(e);
         showToast('تعذّر إنشاء PDF — تأكد من الاتصال بالإنترنت وحاول تاني', 'error');
     } finally {
         window.print = origPrint;
         document.body.classList.remove('pdf-capture');
+        clearDeptFilter();
         if (wasDark) document.body.classList.add('dark-mode');
         _pdfBusy = false;
     }
