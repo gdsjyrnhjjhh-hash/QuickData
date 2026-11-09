@@ -90,6 +90,11 @@
             .panel { box-shadow: none !important; border: 1px solid #ccc !important; }
             table.table-custom th:last-child, table.table-custom td:last-child { display: none; }
         }
+        .modal-box.wide { max-width: 640px; }
+        .modal-box .mf { margin-bottom: 12px; }
+        .modal-box .mf-checks { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 12px; }
+        .modal-box .mf-checks label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+        .row-actions { display: flex; gap: 6px; }
     </style>
 </head>
 <body>
@@ -334,6 +339,33 @@
         </div>
     </footer>
 
+    <!-- ===== مودال تعديل سجل الاستلام / التسليم ===== -->
+    <div class="modal-overlay no-print" id="handoverEditModal">
+        <div class="modal-box wide">
+            <h3><i class="bi bi-pencil-square"></i> تعديل سجل الاستلام / التسليم</h3>
+            <input type="hidden" id="editHandoverId" />
+            <div class="mf"><label for="editEmployeeName">اسم الموظف</label><input type="text" id="editEmployeeName" /></div>
+            <div class="mf"><label for="editDirection">الاتجاه</label>
+                <select id="editDirection"><option value="receive">استلام</option><option value="deliver">تسليم</option></select></div>
+            <div class="mf"><label for="editHandoverBranch">الفرع</label>
+                <select id="editHandoverBranch"><option value="">— بدون فرع —</option></select></div>
+            <div class="mf"><label for="editHandoverDate">التاريخ</label><input type="date" id="editHandoverDate" /></div>
+            <div class="mf-checks">
+                <label><input type="checkbox" id="editHasMobile" /> موبايل</label>
+                <label><input type="checkbox" id="editHasCar" /> سيارة</label>
+                <label><input type="checkbox" id="editHasEmail" /> بريد إلكتروني</label>
+                <label><input type="checkbox" id="editHasEngineering" /> بيانات هندسية</label>
+                <label><input type="checkbox" id="editSigned" /> موقّع</label>
+            </div>
+            <div class="mf"><label for="editOtherItems">أصناف أخرى</label><input type="text" id="editOtherItems" /></div>
+            <div class="mf"><label for="editHandoverNotes">ملاحظات</label><input type="text" id="editHandoverNotes" /></div>
+            <div class="modal-actions">
+                <button class="btn-action" onclick="closeModalById('handoverEditModal')">إلغاء</button>
+                <button class="btn-action btn-primary" onclick="saveHandoverEdit()"><i class="bi bi-check-lg"></i> حفظ التعديل</button>
+            </div>
+        </div>
+    </div>
+
     <script src="layout.js"></script>
 
     <script>
@@ -493,7 +525,10 @@
                                 '<option value="true"' + (h.signed ? ' selected' : '') + '>موقّع</option>' +
                             '</select>' +
                         '</td>' +
-                        '<td><button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteHandover(\'' + h.id + '\')"><i class="bi bi-trash-fill"></i></button></td>' +
+                        '<td><div class="row-actions">' +
+                            '<button class="btn-icon btn-icon-edit" title="تعديل" onclick="openHandoverEdit(\'' + h.id + '\')"><i class="bi bi-pencil-fill"></i></button>' +
+                            '<button class="btn-icon btn-icon-delete" title="حذف" onclick="deleteHandover(\'' + h.id + '\')"><i class="bi bi-trash-fill"></i></button>' +
+                        '</div></td>' +
                     '</tr>'
                 );
             }).join('');
@@ -562,6 +597,55 @@
                 console.error(error);
                 showToast('فشل تحديث حالة التوقيع', 'error');
                 await loadHandovers();
+            }
+        }
+
+        function openHandoverEdit(id) {
+            var h = handoversCache.find(function(x) { return x.id === id; });
+            if (!h) return;
+            // الفروع في قائمة التعديل (من نفس قائمة الإضافة)
+            document.getElementById('editHandoverBranch').innerHTML = document.getElementById('newHandoverBranch').innerHTML;
+            document.getElementById('editHandoverId').value = h.id;
+            document.getElementById('editEmployeeName').value = h.employee_name || '';
+            document.getElementById('editDirection').value = h.direction || 'receive';
+            document.getElementById('editHandoverBranch').value = h.branch_id || '';
+            document.getElementById('editHandoverDate').value = h.handover_date || '';
+            document.getElementById('editHasMobile').checked = !!h.has_mobile;
+            document.getElementById('editHasCar').checked = !!h.has_car;
+            document.getElementById('editHasEmail').checked = !!h.has_email;
+            document.getElementById('editHasEngineering').checked = !!h.has_engineering;
+            document.getElementById('editSigned').checked = !!h.signed;
+            document.getElementById('editOtherItems').value = h.other_items || '';
+            document.getElementById('editHandoverNotes').value = h.notes || '';
+            openModalById('handoverEditModal');
+        }
+
+        async function saveHandoverEdit() {
+            var id = document.getElementById('editHandoverId').value;
+            var name = document.getElementById('editEmployeeName').value.trim();
+            if (!name) { showToast('اكتب اسم الموظف أولاً', 'warning'); return; }
+            var payload = {
+                employee_name: name,
+                direction: document.getElementById('editDirection').value,
+                branch_id: document.getElementById('editHandoverBranch').value || null,
+                has_mobile: document.getElementById('editHasMobile').checked,
+                has_car: document.getElementById('editHasCar').checked,
+                has_email: document.getElementById('editHasEmail').checked,
+                has_engineering: document.getElementById('editHasEngineering').checked,
+                signed: document.getElementById('editSigned').checked,
+                other_items: document.getElementById('editOtherItems').value.trim() || null,
+                notes: document.getElementById('editHandoverNotes').value.trim() || null
+            };
+            var d = document.getElementById('editHandoverDate').value;
+            if (d) payload.handover_date = d;
+            try {
+                await Supabase.updateData('admin_handovers', id, payload);
+                closeModalById('handoverEditModal');
+                showToast('تم حفظ التعديل', 'success');
+                await loadHandovers();
+            } catch (error) {
+                console.error(error);
+                showToast('فشل حفظ التعديل', 'error');
             }
         }
 
